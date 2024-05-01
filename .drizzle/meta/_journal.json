@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1714320980222,
+      "tag": "0000_crazy_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1714331644838,
+      "tag": "0001_flat_piledriver",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1714334504369,
+      "tag": "0002_tranquil_boomerang",
+      "breakpoints": true
+    }
+  ]
+}
