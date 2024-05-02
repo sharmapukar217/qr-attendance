@@ -6,7 +6,12 @@ import type { AppRouter } from "$lib/routers";
 import { createTRPCProxyClient } from "@trpc/client";
 
 export const trpc = createTRPCSvelte<AppRouter>({
-  links: [httpBatchLink({ url: "/api/trpc" })]
+  links: [httpBatchLink({ url: "/api/trpc" })],
+  queryClientConfig: {
+    defaultOptions: {
+      queries: { refetchOnWindowFocus: false }
+    }
+  }
 });
 
 export const trpcHttp = createTRPCProxyClient<AppRouter>({
