@@ -11,17 +11,27 @@
   const updateStatusMutation = trpc.setAttendeeStatus.mutation({
     onMutate({ status }) {
       if (!audience) return;
+      trpc.getAudiences.utils.cancel({ eventId: audience.eventId });
       trpc.getAudiences.utils.setData({ eventId: audience.eventId }, (audiences) => {
         return audiences?.map((aud) => {
           return aud.id === audience.id ? { ...aud, status } : aud;
         });
       });
+
       toast.success(`Status updated to \`${status}\` for ${audience?.email}`);
+
+      return {
+        oldData: trpc.getAudiences.utils.getData({ eventId: audience.eventId })
+      };
     },
     onSettled() {
       if (audience?.eventId) {
         trpc.getAudiences.utils.invalidate({ eventId: audience.eventId });
       }
+    },
+    onError(_data, vars, ctx) {
+      if (!ctx?.oldData) return;
+      trpc.getAudiences.utils.setData({ eventId: vars.eventId }, ctx.oldData);
     }
   });
 </script>
