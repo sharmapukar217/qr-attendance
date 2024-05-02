@@ -16,10 +16,7 @@
   let message = "Scanning...";
 
   const updateStatusMutation = trpc.setAttendeeStatus.mutation();
-  const audiences = trpc.getAudiences.query(
-    { eventId },
-    { enabled: !!eventId, select: (aud) => aud.map((a) => a.email) }
-  );
+  const audiences = trpc.getAudiences.query({ eventId }, { enabled: !!eventId });
 
   const swapCamera = () => {};
 
@@ -39,16 +36,29 @@
         return;
       }
 
-      if ($audiences.data?.includes(data.email)) {
+      const isAlreadyPresent = $audiences.data?.filter((a) => {
+        return a.email === data.email && a.status === "present";
+      });
+
+      if (isAlreadyPresent && isAlreadyPresent.length >= 1) {
         message = `Already marked as \`present\` for ${data.email}`;
         status = "success";
         return;
       }
 
       await $updateStatusMutation.mutateAsync({
-        eventId: 1,
-        audienceId: 1,
+        eventId: data.eventId,
+        audienceId: data.audienceId,
         status: "present"
+      });
+
+      trpc.getAudiences.utils.setData({ eventId: data.eventId }, (audiences) => {
+        if (!audiences) return;
+        return audiences.map((audience) => {
+          return audience.id === data.audienceId
+            ? { ...audience, status: "present" }
+            : audience;
+        });
       });
 
       message = `Updated status for ${data.email} to \`present\``;

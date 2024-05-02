@@ -3,7 +3,7 @@
 </script>
 
 <header
-  class="sticky top-0 z-[100] border-b py-3 bg-background/90 backdrop-blur-sm shadow-sm shadow-foreground/20">
+  class="sticky top-0 z-50 border-b py-3 bg-background/90 backdrop-blur-sm shadow-sm shadow-foreground/20">
   <div class="container flex items-center">
     <div>
       <a href="/" class="size-10"> Logo </a>

@@ -28,19 +28,29 @@ type InvitationData = {
 
 export const bulkSendInvitations = async (data: InvitationData[]) => {
   for (const d of data) {
-    const qr = await QRCode.toDataURL(JSON.stringify(d));
-    transporter.sendMail({
-      from: env.MAIL_FROM,
-      to: d.email,
-      subject: `Invited for our event \`${d.eventTitle}\``,
-      html: `
+    console.info(`Sending email to: ${d.email}`);
+
+    try {
+      const qr = await QRCode.toDataURL(JSON.stringify(d));
+      transporter.sendMail({
+        attachDataUrls: true,
+        from: env.MAIL_FROM,
+        to: d.email,
+        subject: `Invited for our event \`${d.eventTitle}\``,
+        html: `
         For our event ${d.eventTitle} going to be held at ${d.eventLocation}
         on date ${d.eventDate}, we would like to invite you to join us.
         Here's the qr code as an invitation. Please keep it safe. 
         Thank you!!! Hyperce!!!
-
-        <img src=${qr} alt="" />
+        <br>
+        <img src=${qr} alt="">
       `
-    });
+      });
+      console.info(`Email sent to: ${d.email}`);
+    } catch (err: any) {
+      console.error(
+        `Error occured while sending email to: ${d.email}; Reason: ${err.message}`
+      );
+    }
   }
 };

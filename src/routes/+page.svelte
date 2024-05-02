@@ -24,6 +24,12 @@
   const form = superForm(data.addEventForm, {
     validators: zodClient(addEventSchema),
     validationMethod: "onblur",
+    onSubmit() {
+      toast.loading("Please wait while loading...", {
+        duration: Infinity,
+        id: "add-event"
+      });
+    },
 
     onResult({ result }) {
       if (result.type === "success") {
@@ -41,15 +47,17 @@
           return [...old, newData];
         });
 
-        toast.success("Event added successfully!");
+        toast.success("Event added successfully!", { id: "add-event" });
         trpc.getEvents.utils.invalidate();
       } else if (result.type === "error") {
-        toast.error("Something went wrong while trying to add new event!");
+        toast.error("Something went wrong while trying to add new event!", {
+          id: "add-event"
+        });
       }
     }
   });
 
-  const formData = form.form;
+  const { form: formData, submitting } = form;
 
   const allEvents = trpc.getEvents.query({ date: undefined });
   $: dates = new Set($allEvents.data?.map((d) => d.scheduledDate) ?? []);
@@ -58,7 +66,7 @@
 
 <MainLayout title="Events" activeTab="events">
   <PinChecker />
-  
+
   <div class="flex flex-col gap-8 lg:flex-row">
     <div class="lg:order-2 lg:ml-auto lg:w-1/3 p-3 rounded-lg border shadow-sm">
       <Calendar bind:value={date} datesToMark={dates} />
@@ -276,11 +284,12 @@
             </div>
 
             <button
+              disabled={$submitting}
               type="submit"
               class="
               text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 w-full lg:w-auto
-              hover:bg-primary/90 focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none">
-              Submit
+              hover:bg-primary/90 focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-90">
+              {$submitting ? "Submitting..." : "Submit"}
             </button>
           </form>
         </Dialog.Content>

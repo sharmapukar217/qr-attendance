@@ -27,7 +27,10 @@ export const actions = {
           .values([eventData])
           .returning({ id: schema.events.id });
 
-        const listOfEmails = audiences.split(",").filter((v) => !!v);
+        const listOfEmails = audiences
+          .split(",")
+          .map((e) => e.trim())
+          .filter((v) => !!v);
 
         const audienceEmails = filterEmails(listOfEmails).map((e) => ({
           email: e.trim(),
@@ -37,17 +40,21 @@ export const actions = {
         return await tx.insert(schema.audiences).values(audienceEmails).returning();
       });
 
-      await bulkSendInvitations(
-        result.map((r) => ({
-          email: r.email,
-          audienceId: r.id,
-          eventId: r.eventId,
-          eventTitle: eventData.title,
-          eventDate: eventData.scheduledDate,
-          eventTime: eventData.scheduledTime,
-          eventLocation: eventData.scheduledLocation
-        }))
-      );
+      try {
+        await bulkSendInvitations(
+          result.map((r) => ({
+            email: r.email,
+            audienceId: r.id,
+            eventId: r.eventId,
+            eventTitle: eventData.title,
+            eventDate: eventData.scheduledDate,
+            eventTime: eventData.scheduledTime,
+            eventLocation: eventData.scheduledLocation
+          }))
+        );
+      } catch {
+        // just to make sure app doesn't crash email error
+      }
 
       addEventForm.message = "Event added successfully!";
     } catch {
@@ -122,17 +129,21 @@ export const actions = {
       });
 
       if (result?.length) {
-        await bulkSendInvitations(
-          result.map((r) => ({
-            email: r.email,
-            audienceId: r.id,
-            eventId: oldEventData.id,
-            eventTitle: oldEventData.title,
-            eventDate: oldEventData.scheduledLocation,
-            eventLocation: oldEventData.scheduledLocation,
-            eventTime: oldEventData.scheduledTime
-          }))
-        );
+        try {
+          await bulkSendInvitations(
+            result.map((r) => ({
+              email: r.email,
+              audienceId: r.id,
+              eventId: oldEventData.id,
+              eventTitle: oldEventData.title,
+              eventDate: oldEventData.scheduledLocation,
+              eventLocation: oldEventData.scheduledLocation,
+              eventTime: oldEventData.scheduledTime
+            }))
+          );
+        } catch {
+          // just to make sure app doesn't crash email error
+        }
       }
 
       updateEventForm.message = "Event updated successfully!";
