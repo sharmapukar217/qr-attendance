@@ -10,6 +10,12 @@
 
   const updateStatusMutation = trpc.setAttendeeStatus.mutation({
     onMutate({ status }) {
+      if (!audience) return;
+      trpc.getAudiences.utils.setData({ eventId: audience.eventId }, (audiences) => {
+        return audiences?.map((aud) => {
+          return aud.id === audience.id ? { ...aud, status } : aud;
+        });
+      });
       toast.success(`Status updated to \`${status}\` for ${audience?.email}`);
     },
     onSettled() {
