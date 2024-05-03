@@ -1,0 +1,1 @@
+ALTER TABLE attendees ADD `email_sent` integer DEFAULT 0;

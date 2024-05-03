@@ -15,6 +15,7 @@
     CalendarDate
   } from "@internationalized/date";
   import { toast } from "svelte-sonner";
+  import { twMerge } from "tailwind-merge";
 
   let editEventDialogOpened = false;
   export let showDate: boolean = true;
@@ -30,7 +31,7 @@
       select(data) {
         return {
           ...data,
-          audiences: data.audiences.map((aud) => aud.email).join(", ")
+          attendees: data.attendees.map((aud) => aud.email).join(", ")
         };
       }
     }
@@ -75,7 +76,11 @@
   $: formData = form.form;
 </script>
 
-<li class="flex flex-col space-y-2 bg-background border rounded-xl px-4 py-3 shadow-sm">
+<li
+  class={twMerge(
+    "flex flex-col space-y-2 bg-background border rounded-xl px-4 py-3 shadow-sm",
+    !event.createdAt && "border-foreground/30 animate-pulse"
+  )}>
   <div class="text-left inline-flex items-start">
     <h2 class="text-md font-medium lg:font-semibold">
       {event.title}
@@ -132,7 +137,7 @@
     class="text-muted-foreground inline-flex items-center font-medium md:font-semibold">
     <div class="me-2 icon-[heroicons--map-pin-solid] w-5 h-5"></div>
     <div class="text-sm mt-0.5">
-      {event.scheduledLocation} - {event.audiences} people invited
+      {event.scheduledLocation} - {event.attendees} people invited
     </div>
   </div>
 </li>
@@ -331,17 +336,17 @@
             <Form.Label
               class="text-sm font-medium text-muted-foreground inline-flex items-center cursor-pointer">
               <div class="icon-[heroicons--calendar-days] w-5 h-5 me-2"></div>
-              <div>Audiences</div>
+              <div>Attendees</div>
             </Form.Label>
             <textarea
               rows={4}
               {...attrs}
-              name="audiences"
-              bind:value={$formData.audiences}
+              name="attendees"
+              bind:value={$formData.attendees}
               class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
               focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
               aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
-              placeholder="Enter emails of audiences, comma separated" />
+              placeholder="Enter emails of attendees, comma separated" />
             <Form.FieldErrors class="text-sm text-destructive" />
 
             <small class="text-muted-foreground text-xs">

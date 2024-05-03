@@ -27,6 +27,7 @@
   export let minValue: CalendarPrimitive.Props["minValue"] = undefined;
   export let maxValue: CalendarPrimitive.Props["maxValue"] = undefined;
 
+  let open = false;
   let inputRef: HTMLInputElement | undefined;
 
   const df = new DateFormatter("en-US", {
@@ -34,9 +35,17 @@
   });
 </script>
 
-<input type="hidden" {id} {name} bind:this={inputRef} {...$$restProps} />
+<input
+  {id}
+  {name}
+  bind:this={inputRef}
+  {...$$restProps}
+  class="w-0 h-0"
+  on:focus={() => {
+    open = true;
+  }} />
 
-<Popover.Root>
+<Popover.Root bind:open>
   <Popover.Trigger
     class={twMerge(
       "inline-flex items-center justify-center text-sm font-medium md:font-semibold bg-background text-muted-foreground border rounded-lg px-3 h-10 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background",

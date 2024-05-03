@@ -1,118 +1,21 @@
 <script lang="ts">
-  import { toast } from "svelte-sonner";
+  import { Tooltip } from "bits-ui";
   import { twMerge } from "tailwind-merge";
-  import { Tooltip, Dialog } from "bits-ui";
-  import type { RouterOutput } from "$lib/routers";
-  import { trpc } from "$lib/utilities/trpc-client";
+  import { createMutation } from "@tanstack/svelte-query";
+  import type { RouterOutput, RouterInput } from "$lib/routers";
 
   export let allowAttendance: boolean;
-  export let audience: RouterOutput["getAudiences"][number] | undefined;
+  export let attendee: RouterOutput["getAttendees"][number] | undefined;
 
-  const updateStatusMutation = trpc.setAttendeeStatus.mutation({
-    onMutate({ status }) {
-      if (!audience) return;
-      trpc.getAudiences.utils.cancel({ eventId: audience.eventId });
-      trpc.getAudiences.utils.setData({ eventId: audience.eventId }, (audiences) => {
-        return audiences?.map((aud) => {
-          return aud.id === audience.id ? { ...aud, status } : aud;
-        });
-      });
-
-      toast.success(`Status updated to \`${status}\` for ${audience?.email}`);
-
-      return {
-        oldData: trpc.getAudiences.utils.getData({ eventId: audience.eventId })
-      };
-    },
-    onSettled() {
-      if (audience?.eventId) {
-        trpc.getAudiences.utils.invalidate({ eventId: audience.eventId });
-      }
-    },
-    onError(_data, vars, ctx) {
-      if (!ctx?.oldData) return;
-      trpc.getAudiences.utils.setData({ eventId: vars.eventId }, ctx.oldData);
-    }
-  });
+  const setAttendeeStatus = createMutation<
+    RouterOutput["getAttendees"],
+    unknown,
+    RouterInput["setAttendeeStatus"]
+  >({ mutationKey: ["setAttendeeStatus"] });
 </script>
 
-<!-- <Dialog.Root>
-  <Dialog.Trigger
-    title="Start Scanner"
-    class="md:ml-auto bg-primary text-sm font-semibold text-primary-foreground inline-flex items-center justify-center rounded-lg py-2.5 px-3
-focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background hover:bg-primary/85">
-    <div class="icon-[heroicons--qr-code] h-4 w-4" />
-    <p class="hidden md:inline md:ms-3">Start Scanner</p>
-  </Dialog.Trigger>
-
-  <Dialog.Overlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
-  <Dialog.Content
-    class="fixed left-[2%] max-w-xl md:left-1/2 top-1/2 z-50 w-[90%] lg:w-full h-[96%] md:-translate-x-1/2 -translate-y-1/2 border bg-background shadow-lg rounded-lg flex flex-col">
-    <div
-      class="flex flex-row items-center space-y-1.5 text-left px-4 py-4 border-b">
-      <h1 class="text-lg font-semibold leading-none tracking-tight">QR Scanner</h1>
-      <Dialog.Close
-        class="ml-auto rounded-sm opacity-70 transition-all hover:opacity-100 hover:text-destructive">
-        <div class="icon-[heroicons--x-mark] w-4 h-4"></div>
-      </Dialog.Close>
-    </div>
-
-    <div class="h-full px-4 py-4"></div>
-    <div
-      class="border-t text-sm font-medium md:font-semibold text-muted-foreground text-center py-1">
-      Made with ❤️ by <a href="/" class="text-primary hover:underline">
-        hyperce.io
-      </a>
-    </div>
-  </Dialog.Content>
-</Dialog.Root> -->
-
-{#if audience}
+{#if attendee}
   <div class="inline-flex items-center space-x-2">
-    <!-- <Dialog.Root>
-      <Dialog.Trigger asChild let:builder={dialogBuilder}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild let:builder={tooltioBuilder}>
-            <button
-              {...dialogBuilder}
-              {...tooltioBuilder}
-              use:dialogBuilder.action
-              use:tooltioBuilder.action
-              class="inline-flex items-center justify-center bg-muted text-muted-foreground px-2 py-1 rounded-md border focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none">
-              <i class="icon-[heroicons--pencil-square] w-4 h-4" />
-            </button>
-          </Tooltip.Trigger>
-          <Tooltip.Content
-            side="right"
-            sideOffset={10}
-            class="z-50 overflow-hidden rounded-md bg-foreground/80 backdrop-blur-sm px-3 py-1 text-xs text-background uppercase">
-            Edit
-          </Tooltip.Content>
-        </Tooltip.Root>
-      </Dialog.Trigger>
-
-      <Dialog.Overlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
-
-      <Dialog.Content
-        class="fixed left-[2%] max-w-xl md:left-1/2 top-1/2 z-50 w-[90%] lg:w-full h-[96%] md:-translate-x-1/2 -translate-y-1/2 border bg-background shadow-lg rounded-lg flex flex-col">
-        <div class="flex flex-row items-center space-y-1.5 text-left px-4 py-4 border-b">
-          <h1 class="text-lg font-semibold leading-none tracking-tight">QR Scanner</h1>
-          <Dialog.Close
-            class="ml-auto rounded-sm opacity-70 transition-all hover:opacity-100 hover:text-destructive">
-            <div class="icon-[heroicons--x-mark] w-4 h-4"></div>
-          </Dialog.Close>
-        </div>
-
-        <div class="h-full px-4 py-4"></div>
-        <div
-          class="border-t text-sm font-medium md:font-semibold text-muted-foreground text-center py-1">
-          Made with ❤️ by <a href="/" class="text-primary hover:underline">
-            hyperce.io
-          </a>
-        </div>
-      </Dialog.Content>
-    </Dialog.Root> -->
-
     {#if allowAttendance}
       <Tooltip.Root>
         <Tooltip.Trigger asChild let:builder>
@@ -120,28 +23,29 @@ focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background
             {...builder}
             use:builder.action
             on:click={() => {
-              $updateStatusMutation.mutate({
-                audienceId: audience.id,
-                eventId: audience.eventId,
-                status: audience.status === "present" ? "absent" : "present"
+              $setAttendeeStatus.mutate({
+                email: attendee.email,
+                attendeeId: attendee.id,
+                eventId: attendee.eventId,
+                status: attendee.status === "present" ? "absent" : "present"
               });
             }}
             class={twMerge(
               "inline-flex items-center justify-center bg-muted text-muted-foreground px-2 py-1 rounded-md border focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:outline-none transition-all duration-100",
-              audience.status === "present" && "text-green-500 ring-green-500",
-              audience.status === "absent" && "text-red-500 ring-red-500"
+              attendee.status === "present" && "text-green-500 ring-green-500",
+              attendee.status === "absent" && "text-red-500 ring-red-500"
             )}>
             <i
               class="w-4 h-4"
-              class:icon-[bi--toggle-off]={audience.status !== "present"}
-              class:icon-[bi--toggle-on]={audience.status === "present"} />
+              class:icon-[bi--toggle-off]={attendee.status !== "present"}
+              class:icon-[bi--toggle-on]={attendee.status === "present"} />
           </button>
         </Tooltip.Trigger>
         <Tooltip.Content
           side="right"
           sideOffset={10}
           class="z-50 overflow-hidden rounded-md bg-foreground/80 backdrop-blur-sm px-3 py-1 text-xs text-background uppercase">
-          Set to {audience.status === "present" ? "Absent" : "Present"}
+          Set to {attendee.status === "present" ? "Absent" : "Present"}
         </Tooltip.Content>
       </Tooltip.Root>
     {/if}

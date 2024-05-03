@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
+import { text, integer, sqliteTable, int } from "drizzle-orm/sqlite-core";
 
 export const events = sqliteTable("events", {
   id: integer("id").primaryKey(),
@@ -12,14 +12,15 @@ export const events = sqliteTable("events", {
     .default(sql`CURRENT_TIMESTAMP`)
 });
 
-export const audiences = sqliteTable("audiences", {
+export const attendees = sqliteTable("attendees", {
   id: integer("id").primaryKey(),
-  // name: text("name"),
+  name: text("name"),
   email: text("email").notNull(),
   eventId: integer("event_id").notNull(),
+  emailSent: int("email_sent").default(0),
   status: text("status").notNull().default("unknown")
 });
 
-export const audiencesRelation = relations(audiences, ({ many }) => ({
-  audiences: many(audiences)
+export const attendeesRelation = relations(attendees, ({ many }) => ({
+  attendees: many(attendees)
 }));

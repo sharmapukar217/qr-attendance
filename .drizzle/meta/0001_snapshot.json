@@ -1,24 +1,17 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "0b2e0390-57dc-40cf-891c-9b5b7db0e3e0",
-  "prevId": "1434c8d1-ae55-4dbd-821b-7919ab3edb60",
+  "id": "7730c4b4-1682-4edd-9bd6-3d836f8b6eaa",
+  "prevId": "428a6da7-eee1-4595-a9cd-3d2c2aefac7b",
   "tables": {
-    "audiences": {
-      "name": "audiences",
+    "attendees": {
+      "name": "attendees",
       "columns": {
         "id": {
           "name": "id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": false
-        },
-        "event_id": {
-          "name": "event_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "name": {
@@ -34,6 +27,21 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email_sent": {
+          "name": "email_sent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
         },
         "status": {
           "name": "status",
@@ -59,11 +67,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "scheduled_date": {

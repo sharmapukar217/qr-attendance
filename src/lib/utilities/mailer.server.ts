@@ -23,10 +23,12 @@ type InvitationData = {
   eventLocation: string;
 
   eventId: number;
-  audienceId: number;
+  attendeeId: number;
 };
 
 export const bulkSendInvitations = async (data: InvitationData[]) => {
+  const failed: Pick<InvitationData, "email" | "attendeeId">[] = [];
+
   for (const d of data) {
     console.info(`Sending email to: ${d.email}`);
 
@@ -51,6 +53,10 @@ export const bulkSendInvitations = async (data: InvitationData[]) => {
       console.error(
         `Error occured while sending email to: ${d.email}; Reason: ${err.message}`
       );
+
+      failed.push({ attendeeId: d.attendeeId, email: d.email });
     }
   }
+
+  return failed;
 };

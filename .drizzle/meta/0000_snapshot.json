@@ -1,11 +1,11 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "1434c8d1-ae55-4dbd-821b-7919ab3edb60",
+  "id": "428a6da7-eee1-4595-a9cd-3d2c2aefac7b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "audiences": {
-      "name": "audiences",
+    "attendees": {
+      "name": "attendees",
       "columns": {
         "id": {
           "name": "id",
@@ -14,23 +14,23 @@
           "notNull": true,
           "autoincrement": false
         },
-        "event_id": {
-          "name": "event_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "email": {
           "name": "email",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -59,11 +59,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "scheduled_date": {

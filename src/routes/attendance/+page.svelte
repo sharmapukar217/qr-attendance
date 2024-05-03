@@ -33,13 +33,13 @@
     { enabled: !!value && hasEvents }
   );
 
-  $: audiences = trpc.getAudiences.query(
+  $: attendees = trpc.getAttendees.query(
     { eventId: Number(eventId) },
     { enabled: !!eventId }
   );
 
-  $: data = readable($audiences.data ?? []);
-  $: table = createTable<RouterOutput["getAudiences"][number]>(data, {
+  $: data = readable($attendees.data ?? []);
+  $: table = createTable<RouterOutput["getAttendees"][number]>(data, {
     page: addPagination(),
     sort: addSortBy({ disableMultiSort: true }),
     filter: addTableFilter({
@@ -80,7 +80,7 @@
       cell: (item) => {
         return createRender(ActionCell, {
           // @ts-expect-error item.row.original is not defined in typescript, but present in js object
-          audience: item.row.original,
+          attendee: item.row.original,
           allowAttendance: value.toString() === todayDate.toString()
         });
       },

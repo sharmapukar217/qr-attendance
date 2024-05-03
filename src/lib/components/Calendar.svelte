@@ -60,7 +60,7 @@
               {#each weekDates as date}
                 <Calendar.Cell
                   {date}
-                  class=" w-full relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([data-selected])]:bg-accent [&:has([data-selected][data-outside-month])]:bg-accent/50">
+                  class=" w-full relative p-0 text-center text-sm focus-within:relative [&:has([data-selected])]:bg-accent [&:has([data-selected][data-outside-month])]:bg-accent/50">
                   <Calendar.Day
                     {date}
                     month={month.value}
@@ -78,7 +78,7 @@
                       "data-[outside-month]:pointer-events-none data-[outside-month]:text-muted-foreground data-[outside-month]:opacity-50 [&[data-outside-month][data-selected]]:bg-muted/50 [&[data-outside-month][data-selected]]:text-muted-foreground [&[data-outside-month][data-selected]]:opacity-30"
                     )}>
                     <div
-                      class="z-50 w-8 h-8 flex items-center justify-center text-center group-data-[selected=true]:rounded-full group-data-[selected=true]:bg-primary group-data-[selected=true]:text-primary-foreground">
+                      class="w-8 h-8 flex items-center justify-center text-center group-data-[selected=true]:rounded-full group-data-[selected=true]:bg-primary group-data-[selected=true]:text-primary-foreground group-data-[selected=true]:z-30">
                       {date.day}
                     </div>
 

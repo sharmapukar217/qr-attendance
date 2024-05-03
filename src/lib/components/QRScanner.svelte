@@ -1,10 +1,12 @@
 <script lang="ts">
   import { Dialog } from "bits-ui";
+  import { onDestroy } from "svelte";
   import QrScanner from "qr-scanner";
   import { toast } from "svelte-sonner";
-  import { onDestroy, tick } from "svelte";
   import { twMerge } from "tailwind-merge";
   import { trpc } from "$lib/utilities/trpc-client";
+  import { createMutation } from "@tanstack/svelte-query";
+  import type { RouterOutput, RouterInput } from "$lib/routers";
 
   export let eventId: number;
 
@@ -15,8 +17,13 @@
   let status = "scanning";
   let message = "Scanning...";
 
-  const updateStatusMutation = trpc.setAttendeeStatus.mutation();
-  const audiences = trpc.getAudiences.query({ eventId }, { enabled: !!eventId });
+  const attendees = trpc.getAttendees.query({ eventId }, { enabled: !!eventId });
+
+  const updateStatusMutation = createMutation<
+    RouterOutput["getAttendees"],
+    unknown,
+    RouterInput["setAttendeeStatus"]
+  >({ mutationKey: ["setAttendeeStatus"] });
 
   const swapCamera = () => {};
 
@@ -36,7 +43,7 @@
         return;
       }
 
-      const isAlreadyPresent = $audiences.data?.filter((a) => {
+      const isAlreadyPresent = $attendees.data?.filter((a) => {
         return a.email === data.email && a.status === "present";
       });
 
@@ -47,17 +54,18 @@
       }
 
       await $updateStatusMutation.mutateAsync({
+        status: "present",
+        email: data.email,
         eventId: data.eventId,
-        audienceId: data.audienceId,
-        status: "present"
+        attendeeId: data.attendeeId
       });
 
-      trpc.getAudiences.utils.setData({ eventId: data.eventId }, (audiences) => {
-        if (!audiences) return;
-        return audiences.map((audience) => {
-          return audience.id === data.audienceId
-            ? { ...audience, status: "present" }
-            : audience;
+      trpc.getAttendees.utils.setData({ eventId: data.eventId }, (attendees) => {
+        if (!attendees) return;
+        return attendees.map((attendee) => {
+          return attendee.id === data.attendeeId
+            ? { ...attendee, status: "present" }
+            : attendee;
         });
       });
 

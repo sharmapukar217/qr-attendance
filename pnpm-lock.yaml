@@ -5,12 +5,18 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@felte/validator-zod':
+    specifier: ^1.0.17
+    version: 1.0.17(zod@3.23.4)
   '@internationalized/date':
     specifier: ^3.5.2
     version: 3.5.2
   '@libsql/client':
     specifier: ^0.6.0
     version: 0.6.0
+  '@tanstack/query-core':
+    specifier: ^5.32.1
+    version: 5.32.1
   '@tanstack/svelte-query':
     specifier: ^5.32.0
     version: 5.32.0(svelte@4.2.15)
@@ -32,6 +38,9 @@ dependencies:
   drizzle-orm:
     specifier: ^0.30.9
     version: 0.30.9(@libsql/client@0.6.0)
+  felte:
+    specifier: ^1.2.14
+    version: 1.2.14(svelte@4.2.15)
   formsnap:
     specifier: ^1.0.0
     version: 1.0.0(svelte@4.2.15)(sveltekit-superforms@2.12.6)
@@ -846,6 +855,28 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
 
+  /@felte/common@1.1.8:
+    resolution: {integrity: sha512-VbEOfNLWfDx0SpCfeE+fNWDpvcntND4MFs7Lxd18RIjrZYH82D0wWe9th2oVF9QT5XzgBEdMF5NGIttcwU4sjg==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dev: false
+
+  /@felte/core@1.4.3:
+    resolution: {integrity: sha512-DoXTuHD4atDG0SfTfI4orllcnriHRgM/ijMdRsUbLPL7O/UWGSWNXkxErx7XPbWOXMjX0J79KLfxZzm9abOCxw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      '@felte/common': 1.1.8
+    dev: false
+
+  /@felte/validator-zod@1.0.17(zod@3.23.4):
+    resolution: {integrity: sha512-rOX1chLfTcixKMPEdrMSi8zsCM685Dsoy1a5qN1G6Fyh7HYK1vSmI6SfJ7m92DOt6kV+vAP4m5rk94Y8UFIeVw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    peerDependencies:
+      zod: ^3.2.0
+    dependencies:
+      '@felte/common': 1.1.8
+      zod: 3.23.4
+    dev: false
+
   /@floating-ui/core@1.6.0:
     resolution: {integrity: sha512-PcF++MykgmTj3CIyOQbKA/hDzOAiqI3mhuoN44WRCopIs1sgoDoU4oty4Jtqaj/y3oDU6fnVSm4QG0a3t5i0+g==}
     dependencies:
@@ -1613,6 +1644,10 @@ packages:
 
   /@tanstack/query-core@5.32.0:
     resolution: {integrity: sha512-Z3flEgCat55DRXU5UMwYU1U+DgFZKA3iufyOKs+II7iRAo0uXkeU7PH5e6sOH1CGEag0IpKmZxlUFpCg6roSKw==}
+    dev: false
+
+  /@tanstack/query-core@5.32.1:
+    resolution: {integrity: sha512-mCWa1wdGb1jiny4+qYegbSeadcFj+Nq65KFSs4A1DRveoIq7SrTwUhqu7hrB6d54cQH5x59DfJvxusn3w1Cj/g==}
     dev: false
 
   /@tanstack/query-devtools@5.28.10:
@@ -2928,6 +2963,16 @@ packages:
     dependencies:
       reusify: 1.0.4
     dev: true
+
+  /felte@1.2.14(svelte@4.2.15):
+    resolution: {integrity: sha512-eRByCSKhmvrkPOFQyCEGNx/DmP54nERvWwybyMcBSxlVXvsmDA7mDjXTJTuXFeKaemTehNvZE4tzf/xXLSE3HQ==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    peerDependencies:
+      svelte: ^3.31.0 || ^4.0.0
+    dependencies:
+      '@felte/core': 1.4.3
+      svelte: 4.2.15
+    dev: false
 
   /fetch-blob@3.2.0:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
