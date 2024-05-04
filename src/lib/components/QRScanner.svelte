@@ -105,7 +105,7 @@
   }}>
   <Dialog.Trigger
     title="Start Scanner"
-    class="md:ml-auto bg-primary text-sm font-semibold text-primary-foreground inline-flex items-center justify-center rounded-lg py-2.5 px-3
+    class="bg-primary text-sm font-semibold text-primary-foreground inline-flex items-center justify-center rounded-lg py-2.5 px-3
   focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background hover:bg-primary/85">
     <div class="icon-[heroicons--qr-code] h-4 w-4" />
     <p class="hidden md:inline md:ms-3">Start Scanner</p>

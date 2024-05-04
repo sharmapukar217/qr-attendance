@@ -25,6 +25,14 @@
     mutationKey: ["removeAttendeeFromEvent"]
   });
 
+  const resendInvitationMutation = createMutation<
+    RouterOutput["resendInvitation"],
+    unknown,
+    RouterInput["resendInvitation"]
+  >({
+    mutationKey: ["resendInvitation"]
+  });
+
   const updateEventMutation = createMutation<
     RouterOutput["updateEvent"],
     unknown,
@@ -40,21 +48,22 @@
     mutationKey: ["updateEvent"]
   });
 
-  const { form, errors, setInitialValues, touched, data } = createForm({
-    initialValues: {
-      title: "",
-      id: undefined,
-      scheduledDate: "",
-      scheduledTime: "",
-      scheduledLocation: "",
-      attendees: [{ id: undefined, name: "", phoneNumber: "", email: "" }]
-    },
-    extend: validator({ schema: addEventSchema }),
-    onSubmit(data) {
-      if (!event?.id) return;
-      $updateEventMutation.mutate(data);
-    }
-  });
+  const { form, errors, setInitialValues, touched, data, isDirty, setIsDirty } =
+    createForm({
+      initialValues: {
+        title: "",
+        id: undefined,
+        scheduledDate: "",
+        scheduledTime: "",
+        scheduledLocation: "",
+        attendees: [{ id: undefined, name: "", phoneNumber: "", email: "" }]
+      },
+      extend: validator({ schema: addEventSchema }),
+      onSubmit(data) {
+        if (!event?.id) return;
+        $updateEventMutation.mutate(data);
+      }
+    });
 
   // @ts-ignore
   $: if (event) setInitialValues(event as any);
@@ -119,6 +128,7 @@
       <button
         type="button"
         on:click={() => {
+          setIsDirty(true);
           scheduledDateValue = today(getLocalTimeZone());
           $data.scheduledDate = scheduledDateValue.toString();
         }}
@@ -140,6 +150,7 @@
               date.getDate()
             );
             $data.scheduledDate = event.scheduledDate;
+            setIsDirty(true);
           }}>
           <div class="icon-[bi--arrow-counterclockwise] w-4 h-4" />
         </button>
@@ -176,6 +187,7 @@
         type="button"
         on:click={() => {
           $data.scheduledTime = "ALL DAY";
+          setIsDirty(true);
         }}
         class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
           hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
@@ -189,6 +201,7 @@
           focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
           on:click={() => {
             $data.scheduledTime = event.scheduledTime;
+            setIsDirty(true);
           }}>
           <div class="icon-[bi--arrow-counterclockwise] w-4 h-4" />
         </button>
@@ -227,6 +240,7 @@
           hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
         on:click={() => {
           $data.scheduledLocation = "REMOTE";
+          setIsDirty(true);
         }}>
         Remote
       </button>
@@ -237,6 +251,7 @@
           focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
         on:click={() => {
           $data.scheduledLocation = "OFFICE";
+          setIsDirty(true);
         }}>
         Office
       </button>
@@ -248,6 +263,7 @@
           focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
           on:click={() => {
             $data.scheduledLocation = event.scheduledLocation;
+            setIsDirty(true);
           }}>
           <div class="icon-[bi--arrow-counterclockwise] w-4 h-4" />
         </button>
@@ -304,23 +320,37 @@
                       {...builder}
                       use:builder.action
                       type="button"
-                      disabled={wasEmailSent}
+                      disabled={wasEmailSent || $resendInvitationMutation.isPending}
                       on:click={() => {
+                        if (!event?.attendees?.[idx]) return;
+
                         if (!wasEmailSent && confirm("Sure to retry sending email?")) {
+                          $resendInvitationMutation.mutate({
+                            eventId: event.id,
+                            email: event.attendees[idx].email,
+                            attendeeId: event.attendees[idx].id
+                          });
                         }
                       }}
                       class={twMerge(
-                        "cursor-pointer ml-auto size-10 rounded-lg flex items-center justify-center",
+                        "cursor-pointer ml-auto size-10 rounded-lg flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-85",
                         wasEmailSent &&
                           "bg-foreground/5 border border-foreground/10 text-green-500",
 
                         !wasEmailSent &&
-                          "bg-foreground/5 border border-foreground/10 text-destructive focus:ring-destructive/50 focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
+                          !$resendInvitationMutation.isPending &&
+                          "bg-foreground/5 border border-foreground/10 text-destructive focus:ring-destructive/50 focus:ring-2 focus:ring-offset-2 focus:ring-offset-background",
+
+                        !wasEmailSent &&
+                          $resendInvitationMutation.isPending &&
+                          "text-muted-foreground focus:ring-muted"
                       )}>
                       <div
                         class="size-5"
                         class:icon-[bi--check-all]={wasEmailSent}
-                        class:icon-[heroicons--exclamation-triangle]={!wasEmailSent} />
+                        class:icon-[heroicons--exclamation-triangle]={!wasEmailSent &&
+                          !$resendInvitationMutation.isPending}
+                        class:icon-[bi--arrow-repeat]={$resendInvitationMutation.isPending} />
                     </button>
                   </Tooltip.Trigger>
                   <Tooltip.Content
@@ -342,20 +372,26 @@
                       type="button"
                       on:click={() => {
                         const attendeeId = $data.attendees?.[idx]?.id;
-                        if (
-                          event?.id &&
-                          attendeeId &&
-                          confirm("Sure to remove this attendee?")
-                        ) {
-                          $removeAttendeeMutation.mutate({
-                            attendeeId,
-                            eventId: event.id
-                          });
-                        } else if (
-                          !$touched.attendees[idx].name ||
-                          confirm("Sure to remove this attendee?")
-                        ) {
-                          $data.attendees = $data.attendees.filter((_a, i) => i !== idx);
+
+                        if (attendeeId && event?.id) {
+                          if (confirm("Sure to remove this attendee?")) {
+                            $removeAttendeeMutation.mutate({
+                              attendeeId,
+                              eventId: event.id
+                            });
+                            $data.attendees = $data.attendees.filter(
+                              (_a, i) => i !== idx
+                            );
+                          }
+                        } else {
+                          if (
+                            (!attendeeId && !$touched.attendees[idx].name) ||
+                            confirm("Sure to remove this attendee?")
+                          ) {
+                            $data.attendees = $data.attendees.filter(
+                              (_a, i) => i !== idx
+                            );
+                          }
                         }
                       }}
                       class="cursor-pointer ml-auto bg-foreground/5 border border-foreground/10 text-destructive focus:ring-destructive/50
@@ -446,6 +482,7 @@
           key: String($data.attendees.length + 1)
         }
       ];
+      setIsDirty(true);
     }}
     type="button"
     class="
@@ -457,6 +494,7 @@
   <hr class="border border-foreground/15" />
   <button
     type="submit"
+    disabled={!$isDirty}
     class="
       text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 w-full lg:w-auto
       hover:bg-primary/90 focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-90">

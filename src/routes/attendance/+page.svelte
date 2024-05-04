@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Select } from "bits-ui";
+  import { toast } from "svelte-sonner";
   import { readable } from "svelte/store";
   import { today, getLocalTimeZone } from "@internationalized/date";
   import { Render, Subscribe, createRender, createTable } from "svelte-headless-table";
@@ -19,11 +20,45 @@
   import PinChecker from "$lib/components/PinChecker.svelte";
 
   let eventId: string | undefined;
+  let tableRef: HTMLTableElement | undefined;
 
   const todayDate = today(getLocalTimeZone());
   let value = todayDate;
 
   const allEvents = trpc.getEvents.query({ date: undefined });
+
+  function tableToSpreadSheet() {
+    toast.loading("Please wait while generating csv file...", { id: "exportFile" });
+
+    let csvContent = "";
+    const header = ["Name", "Email", "Phone Number", "Status"].join(",") + "\n";
+    csvContent += header;
+
+    $attendees.data?.forEach((attendee) => {
+      const values = [
+        attendee.name,
+        attendee.email,
+        attendee.phoneNumber,
+        attendee.status
+      ].join(",");
+      csvContent += values + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+
+    const event = $events.data?.find((e) => e.id === Number(eventId));
+    if (!event) {
+      toast.error("Something went wrong. Please try again later", { id: "exportFile" });
+    } else {
+      link.download = `${event.title.trim()}_${Date.now()}.csv`;
+      link.click();
+
+      toast.success("Downloadig csv file...", { id: "exportFile" });
+    }
+  }
 
   $: dates = new Set($allEvents.data?.map((d) => d.scheduledDate) ?? []);
   $: hasEvents = dates.has(value?.toString());
@@ -169,14 +204,25 @@
       focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
       disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted disabled:placeholder-muted" />
 
-    {#if hasEvents && value && todayDate.compare(value) == 0 && eventId}
-      <QrScanner eventId={Number(eventId)} />
-    {/if}
+    <div class="ml-auto flex items-center gap-4">
+      {#if eventId}
+        <button
+          on:click={() => tableToSpreadSheet()}
+          class="bg-muted text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-3 rounded-lg py-2.5 px-3
+        focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background hover:bg-muted/85">
+          <div class="icon-[bi--filetype-csv] size-4" />
+          <span>Export</span>
+        </button>
+      {/if}
+      {#if hasEvents && value && todayDate.compare(value) == 0 && eventId}
+        <QrScanner eventId={Number(eventId)} />
+      {/if}
+    </div>
   </div>
 
   <div class="relative w-full overflow-auto mt-3 p-1 border rounded-lg shadow">
     {#if hasEvents && eventId}
-      <table class="w-full caption-bottom text-sm" {...$tableAttrs}>
+      <table class="w-full caption-bottom text-sm" {...$tableAttrs} bind:this={tableRef}>
         <thead class="border-b rounded-t-lg">
           {#each $headerRows as headerRow}
             <Subscribe rowAttrs={headerRow.attrs()}>

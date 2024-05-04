@@ -94,7 +94,7 @@
   <Dialog.Overlay class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
 
   <Dialog.Content
-    class="fixed left-[50%] top-[50%] z-50 grid w-[90%] max-w-lg max-h-[96%] overflow-auto translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg lg:w-full">
+    class="fixed left-[50%] top-[50%] z-50 grid w-[90%] max-w-2xl max-h-[96%] overflow-auto translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg lg:w-full">
     <div class="flex flex-col space-y-1.5 text-left">
       <div>
         <h1 class="text-lg font-semibold leading-none tracking-tight">Edit event info</h1>

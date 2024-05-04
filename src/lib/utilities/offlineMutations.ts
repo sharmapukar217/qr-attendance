@@ -8,6 +8,9 @@ import { trpc, trpcHttp } from "$lib/utilities/trpc-client";
 import { TRPCClientError } from "trpc-svelte-query";
 
 export const setupOfflineMutations = (queryClient: QueryClient) => {
+  /**
+   * mutation to add the event
+   */
   queryClient.setMutationDefaults(["addEvent"], {
     async mutationFn(data: RouterInput["addEvent"]) {
       toast.loading("Adding event...", { id: "addEvent" });
@@ -51,10 +54,9 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
     }
   });
 
-  queryClient.setMutationDefaults(["updateEvent"], {
-    async mutationFn(data: RouterInput["updateEvent"]) {}
-  });
-
+  /**
+   * mutation to delte the event
+   */
   queryClient.setMutationDefaults(["deleteEvent"], {
     async mutationFn({ eventId }: RouterInput["deleteEvent"]) {
       toast.loading("Deleting event...", { id: "deleteEvent" });
@@ -86,6 +88,9 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
     }
   });
 
+  /**
+   * mutation to set attendee status ( present | absent )
+   */
   queryClient.setMutationDefaults(["setAttendeeStatus"], {
     async mutationFn(data: RouterInput["setAttendeeStatus"]) {
       toast.loading("Updating status...", { id: "setAttendeeStatus" });
@@ -184,9 +189,12 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
     }
   });
 
+  /**
+   * mutation to update the the event
+   */
   queryClient.setMutationDefaults(["updateEvent"], {
     async mutationFn(data: RouterInput["updateEvent"]) {
-      toast.loading("Removing attendee from event...", { id: "updateEvent" });
+      toast.loading("Updating event details...", { id: "updateEvent" });
       return await trpcHttp.updateEvent.mutate(data);
     },
     async onMutate({ id, ...eventInfo }: RouterInput["updateEvent"]) {
@@ -217,7 +225,7 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
 
       return { previousEvent, previousEvents };
     },
-    onSuccess(_d, { id, ...eventData }: RouterInput["updateEvent"], ctx) {
+    onSuccess(_d, { id }: RouterInput["updateEvent"]) {
       if (!id) return;
 
       const date = get(selectedDate)?.toString();
@@ -226,7 +234,7 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
       trpc.getEventById.utils.invalidate({ eventId: id });
       toast.success(`Event updated successfully !`, { id: "updateEvent" });
     },
-    onError(_err, { id, ...eventData }: RouterInput["updateEvent"], ctx) {
+    onError(_err, { id }: RouterInput["updateEvent"], ctx) {
       if (!id) return;
       const date = get(selectedDate)?.toString();
       trpc.getEvents.utils.setData({ date }, () => ctx.previousEvents);
@@ -234,6 +242,52 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
       toast.error(`Something went wrong while trying to update event info.`, {
         id: "updateEvent"
       });
+    }
+  });
+
+  /**
+   * mutation to update the the event
+   */
+  queryClient.setMutationDefaults(["resendInvitation"], {
+    async mutationFn(data: RouterInput["resendInvitation"]) {
+      toast.loading("Trying to resend invitaion...", { id: "resendInvitation" });
+
+      try {
+        const isOK = await trpcHttp.resendInvitation.mutate(data);
+        if (isOK) {
+          await trpc.getEventById.utils.cancel({ eventId: data.eventId });
+
+          // @ts-ignore
+          trpc.getEventById.utils.setData({ eventId: data.eventId }, (oldData) => {
+            return {
+              ...oldData,
+              attendees: oldData?.attendees?.map((attendee) => {
+                if (attendee.id !== data.attendeeId) return attendee;
+                return { ...attendee, emailSent: true };
+              })
+            };
+          });
+
+          toast.success(`Invitation email sent sucessfully to \`${data.email}\`!`, {
+            id: "resendInvitation"
+          });
+          trpc.getEventById.utils.invalidate({ eventId: data.eventId });
+        } else {
+          toast.error(
+            `Something went wrong while trying to resend invitation email! to \`${data.email}\`!`,
+            {
+              id: "resendInvitationn"
+            }
+          );
+        }
+      } catch {
+        toast.error(
+          `Something went wrong while trying to resend invitation email! to \`${data.email}\`!`,
+          {
+            id: "resendInvitation"
+          }
+        );
+      }
     }
   });
 };

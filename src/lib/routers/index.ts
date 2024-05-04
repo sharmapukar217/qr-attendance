@@ -207,7 +207,7 @@ export const appRouter = t.router({
 
     if (dbResult?.length) {
       const successfulEmailsResults = await bulkSendInvitations(
-        dbResult.map((r) => ({
+        await dbResult.map((r) => ({
           email: r.email,
           attendeeId: r.id,
           eventId: r.eventId,
@@ -235,7 +235,50 @@ export const appRouter = t.router({
     }
 
     return true;
-  })
+  }),
+
+  resendInvitation: t.procedure
+    .input(
+      z.object({
+        eventId: z.number(),
+        attendeeId: z.number(),
+        email: z.string().trim().email()
+      })
+    )
+    .mutation(async function ({ input }) {
+      const event = await db.query.events.findFirst({
+        where: (event, { eq }) => eq(event.id, input.eventId)
+      });
+
+      if (!event) throw new TRPCError({ message: "Event not found", code: "NOT_FOUND" });
+
+      const successfulEmails = await bulkSendInvitations([
+        {
+          attendeeId: input.attendeeId,
+          email: input.email,
+          eventId: input.eventId,
+          eventDate: event.scheduledDate,
+          eventLocation: event.scheduledLocation,
+          eventTime: event.scheduledTime,
+          eventTitle: event.title
+        }
+      ]);
+
+      if (successfulEmails.length) {
+        await db
+          .update(schema.attendees)
+          .set({ emailSent: 1 })
+          .where(
+            and(
+              eq(schema.attendees.id, input.attendeeId),
+              eq(schema.attendees.eventId, input.eventId)
+            )
+          );
+        return true;
+      }
+
+      return false;
+    })
 });
 
 export type AppRouter = typeof appRouter;
