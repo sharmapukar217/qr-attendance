@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Cookie from "js-cookie";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { PinInput, Toggle, Dialog } from "bits-ui";
@@ -26,7 +27,8 @@
   $: isLocked = remaningRetries === 0;
 
   onMount(() => {
-    if (sessionStorage.getItem("isLocked") === "true") isLocked = true;
+    if (Cookie.get("isLocked") === "true") isLocked = true;
+    if (Cookie.get("isUnlocked") === "true") isUnlocked.set(true);
   });
 </script>
 
@@ -61,13 +63,15 @@
                     open = false;
                     error = false;
                     isUnlocked.set(true);
-                    toast.success("Pin matched. Welcome admin!");
+                    Cookie.remove("isLocked");
+                    Cookie.set("isUnlocked", "true");
+                    toast.success("Pin matched. Welcome admin!", { id: "pin" });
                   } else {
                     error = true;
                     if (remaningRetries > 0) {
                       remaningRetries--;
                     } else {
-                      sessionStorage.setItem("isLocked", "true");
+                      Cookie.set("isLocked", "true");
                     }
                     toast.error(`Pin mismatched! Remaning tries: ${remaningRetries}`, {
                       id: "pin"

@@ -19,6 +19,7 @@
     });
     wb.addEventListener("waiting", () => {
       toast("An update is available. Would you like to update?", {
+        duration: Infinity,
         action: {
           label: "Update",
           onClick: () => wb.messageSkipWaiting()

@@ -36,7 +36,7 @@
         <a
           href={tablink.href}
           class={twMerge(
-            "rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all capitalize",
+            "rounded-md px-3 py-1 text-sm font-medium  capitalize",
             activeTab === tablink.name && "bg-background text-foreground shadow"
           )}>
           {tablink.name}

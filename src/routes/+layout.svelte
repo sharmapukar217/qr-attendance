@@ -1,17 +1,27 @@
 <script lang="ts">
-  import "../app.pcss";
-  import { Toaster, toast } from "svelte-sonner";
+  import "../app.css";
+  import NProgress from "nprogress";
+  import { navigating } from "$app/stores";
+  import { Toaster } from "svelte-sonner";
   import { ModeWatcher, mode } from "mode-watcher";
-  import { QueryClientProvider } from "@tanstack/svelte-query";
   import { SvelteQueryDevtools } from "@tanstack/svelte-query-devtools";
+  import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
   import { trpc } from "$lib/utilities/trpc-client";
+  import QueryPersist from "$lib/components/QueryPersist.svelte";
   import ServiceWorker from "$lib/components/ServiceWorker.svelte";
   import { setupOfflineMutations } from "$lib/utilities/offlineMutations";
 
   export let data;
   $: queryClient = trpc.hydrateFromServer(data.trpc);
   $: if (queryClient) setupOfflineMutations(queryClient);
+
+  NProgress.configure({ showSpinner: false });
+  $: $navigating ? NProgress.start() : NProgress.done();
+
+  const persister = createSyncStoragePersister({
+    storage: typeof window === "undefined" ? undefined : window.localStorage
+  });
 </script>
 
 <ModeWatcher />
@@ -31,7 +41,8 @@
 
 <ServiceWorker />
 
-<QueryClientProvider client={queryClient}>
+<QueryPersist client={queryClient} persistOptions={{ persister }}>
   <slot />
   <SvelteQueryDevtools buttonPosition="bottom-right" />
-</QueryClientProvider>
+</QueryPersist>
+
