@@ -1,5 +1,5 @@
-import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date";
 import { writable } from "svelte/store";
+import { CalendarDate } from "@internationalized/date";
 
 export const isUnlocked = writable(false);
 

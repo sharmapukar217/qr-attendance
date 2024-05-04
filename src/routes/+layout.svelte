@@ -5,52 +5,13 @@
   import { QueryClientProvider } from "@tanstack/svelte-query";
   import { SvelteQueryDevtools } from "@tanstack/svelte-query-devtools";
 
-  import { trpc, trpcHttp } from "$lib/utilities/trpc-client";
+  import { trpc } from "$lib/utilities/trpc-client";
+  import ServiceWorker from "$lib/components/ServiceWorker.svelte";
   import { setupOfflineMutations } from "$lib/utilities/offlineMutations";
 
   export let data;
   $: queryClient = trpc.hydrateFromServer(data.trpc);
   $: if (queryClient) setupOfflineMutations(queryClient);
-
-  // $: if (queryClient) {
-  //   queryClient.setMutationDefaults(["addEvent"], {
-  //     async mutationFn(data) {
-  //       // console.log(data);
-  //     }
-  //   });
-
-  //   // queryClient.setMutationDefaults(["deleteEvent"], {
-  //   //   async mutationFn({ eventId }: { eventId: number }) {
-  //   //     await trpc.getEvents.utils.cancel();
-  //   //     const previousEvents = trpc.getEvents.utils.getData();
-
-  //   //     try {
-  //   //       trpc.getEvents.utils.cancel();
-  //   //       await trpcHttp.deleteEvent.mutate({ eventId });
-
-  //   //       trpc.getEvents.utils.setData({ date: undefined }, (old) => {
-  //   //         if (!old) return [];
-  //   //         return old.filter((o) => o.id !== eventId);
-  //   //       });
-
-  //   //       return { previousEvents, message: "Event deleted successfully!" };
-  //   //     } catch (err: any) {
-  //   //       return {
-  //   //         previousEvents,
-  //   //         message: "Something went wrong  while trying to delete event."
-  //   //       };
-  //   //     }
-  //   //   },
-  //   //   onError: (_err, _newTodo, context) => {
-  //   //     toast.error(context.message);
-  //   //     trpc.getEvents.utils.setData({ date: undefined }, () => context.previousEvents);
-  //   //   },
-  //   //   onSettled: (_data, _var, context) => {
-  //   //     toast.success(context.message);
-  //   //     trpc.getEvents.utils.invalidate();
-  //   //   }
-  //   // });
-  // }
 </script>
 
 <ModeWatcher />
@@ -67,6 +28,8 @@
       cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground"
     }
   }} />
+
+<ServiceWorker />
 
 <QueryClientProvider client={queryClient}>
   <slot />

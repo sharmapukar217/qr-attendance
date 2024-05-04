@@ -74,6 +74,9 @@ dependencies:
   trpc-svelte-query:
     specifier: ^2.1.0
     version: 2.1.0(@sveltejs/kit@2.5.7)(@tanstack/svelte-query@5.32.0)(@trpc/client@10.45.2)(@trpc/server@10.45.2)(svelte@4.2.15)
+  workbox-window:
+    specifier: ^7.1.0
+    version: 7.1.0
   zod:
     specifier: ^3.23.4
     version: 3.23.4
@@ -1746,6 +1749,10 @@ packages:
   /@types/semver@7.5.8:
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
     dev: true
+
+  /@types/trusted-types@2.0.7:
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+    dev: false
 
   /@types/validator@13.11.9:
     resolution: {integrity: sha512-FCTsikRozryfayPuiI46QzH3fnrOoctTjvOYZkho9BTFLCOZ2rgZJHMOVgCOfttjPJcgOx52EpkY0CMfy87MIw==}
@@ -4593,6 +4600,23 @@ packages:
     peerDependencies:
       '@sveltejs/kit': 1.x || 2.x
       svelte: 3.x || 4.x || >=5.0.0-next.51
+    peerDependenciesMeta:
+      '@sinclair/typebox':
+        optional: true
+      '@vinejs/vine':
+        optional: true
+      arktype:
+        optional: true
+      joi:
+        optional: true
+      superstruct:
+        optional: true
+      valibot:
+        optional: true
+      yup:
+        optional: true
+      zod:
+        optional: true
     dependencies:
       '@sveltejs/kit': 2.5.7(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.15)(vite@5.2.10)
       devalue: 4.3.3
@@ -5008,6 +5032,17 @@ packages:
   /wordwrap@1.0.0:
     resolution: {integrity: sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q==}
     dev: true
+
+  /workbox-core@7.1.0:
+    resolution: {integrity: sha512-5KB4KOY8rtL31nEF7BfvU7FMzKT4B5TkbYa2tzkS+Peqj0gayMT9SytSFtNzlrvMaWgv6y/yvP9C0IbpFjV30Q==}
+    dev: false
+
+  /workbox-window@7.1.0:
+    resolution: {integrity: sha512-ZHeROyqR+AS5UPzholQRDttLFqGMwP0Np8MKWAdyxsDETxq3qOAyXvqessc3GniohG6e0mAqSQyKOHmT8zPF7g==}
+    dependencies:
+      '@types/trusted-types': 2.0.7
+      workbox-core: 7.1.0
+    dev: false
 
   /wrap-ansi@6.2.0:
     resolution: {integrity: sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==}

@@ -38,6 +38,7 @@
     "sveltekit-superforms": "^2.12.6",
     "tailwind-merge": "^2.2.2",
     "trpc-svelte-query": "^2.1.0",
+    "workbox-window": "^7.1.0",
     "zod": "^3.23.4"
   },
   "devDependencies": {
