@@ -4,7 +4,8 @@
   import {
     type DateValue,
     DateFormatter,
-    getLocalTimeZone
+    getLocalTimeZone,
+    CalendarDate
   } from "@internationalized/date";
   import type { Calendar as CalendarPrimitive } from "bits-ui";
   import Calendar from "./Calendar.svelte";
@@ -16,6 +17,7 @@
 
   export let id: string;
   export let name: string | undefined = id;
+  export let rawValue: string | undefined = undefined;
   export let value: DateValue | undefined = undefined;
   export let placeholder: string | undefined = "Select a date";
 
@@ -29,6 +31,11 @@
 
   let open = false;
   let inputRef: HTMLInputElement | undefined;
+
+  $: if (rawValue) {
+    const date = new Date(rawValue);
+    value = new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  }
 
   const df = new DateFormatter("en-US", {
     dateStyle: "long"

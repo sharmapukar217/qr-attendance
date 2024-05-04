@@ -27,7 +27,7 @@ type InvitationData = {
 };
 
 export const bulkSendInvitations = async (data: InvitationData[]) => {
-  const failed: Pick<InvitationData, "email" | "attendeeId">[] = [];
+  const success: Pick<InvitationData, "email" | "attendeeId">[] = [];
 
   for (const d of data) {
     console.info(`Sending email to: ${d.email}`);
@@ -49,14 +49,13 @@ export const bulkSendInvitations = async (data: InvitationData[]) => {
       `
       });
       console.info(`Email sent to: ${d.email}`);
+      success.push({ attendeeId: d.attendeeId, email: d.email });
     } catch (err: any) {
       console.error(
         `Error occured while sending email to: ${d.email}; Reason: ${err.message}`
       );
-
-      failed.push({ attendeeId: d.attendeeId, email: d.email });
     }
   }
 
-  return failed;
+  return success;
 };

@@ -120,4 +120,120 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
       });
     }
   });
+
+  queryClient.setMutationDefaults(["removeAttendeeFromEvent"], {
+    async mutationFn(data: RouterInput["removeAttendeeFromEvent"]) {
+      toast.loading("Removing attendee from event...", { id: "removeAttendeeFromEvent" });
+      return await trpcHttp.removeAttendeeFromEvent.mutate(data);
+    },
+    async onMutate({ eventId, attendeeId }: RouterInput["removeAttendeeFromEvent"]) {
+      const date = get(selectedDate)?.toString();
+
+      await trpc.getEvents.utils.cancel({ date });
+      await trpc.getEventById.utils.cancel({ eventId });
+
+      const previousEvents = trpc.getEvents.utils.getData({ date });
+      const previousEvent = trpc.getEventById.utils.getData({ eventId });
+
+      trpc.getEventById.utils.setData({ eventId }, (data) => {
+        if (!data) return;
+
+        return {
+          ...data,
+          attendees: data?.attendees?.filter((attendee) => attendee.id !== attendeeId)
+        };
+      });
+
+      trpc.getEvents.utils.setData({ date }, (events) => {
+        return events?.map((event) => {
+          if (event.id === eventId) {
+            return { ...event, attendees: event.attendees ? event.attendees - 1 : 0 };
+          }
+          return event;
+        });
+      });
+
+      return { previousEvent, previousEvents };
+    },
+    onSuccess(_d, { eventId, attendeeId }: RouterInput["removeAttendeeFromEvent"], ctx) {
+      const date = get(selectedDate)?.toString();
+      const attendee = ctx?.previousEvent?.attendees?.find(
+        (a: any) => a.id === attendeeId
+      );
+      toast.success(`Attendee with email \`${attendee.email}\` removed successfully !`, {
+        id: "removeAttendeeFromEvent"
+      });
+
+      trpc.getEvents.utils.invalidate({ date });
+      trpc.getEventById.utils.invalidate({ eventId });
+    },
+    onError(_err, { eventId, attendeeId }: RouterInput["removeAttendeeFromEvent"], ctx) {
+      const date = get(selectedDate)?.toString();
+      const attendee = ctx?.previousEvent?.attendees?.find(
+        (a: any) => a.id === attendeeId
+      );
+
+      trpc.getEvents.utils.setData({ date }, () => ctx.previousEvents);
+      trpc.getEventById.utils.setData({ eventId }, () => ctx.previousEvent);
+      toast.error(
+        `Something went wrong while trying to remove \`${attendee.email}\` from the list.`,
+        {
+          id: "removeAttendeeFromEvent"
+        }
+      );
+    }
+  });
+
+  queryClient.setMutationDefaults(["updateEvent"], {
+    async mutationFn(data: RouterInput["updateEvent"]) {
+      toast.loading("Removing attendee from event...", { id: "updateEvent" });
+      return await trpcHttp.updateEvent.mutate(data);
+    },
+    async onMutate({ id, ...eventInfo }: RouterInput["updateEvent"]) {
+      if (!id) return;
+
+      const date = get(selectedDate)?.toString();
+
+      await trpc.getEvents.utils.cancel({ date });
+      await trpc.getEventById.utils.cancel({ eventId: id });
+
+      const previousEvents = trpc.getEvents.utils.getData({ date });
+      const previousEvent = trpc.getEventById.utils.getData({ eventId: id });
+
+      // @ts-expect-error assuring that attendees[number].id always exist
+      trpc.getEventById.utils.setData({ eventId: id }, (data) => {
+        if (!data) return;
+        return { ...data, ...eventInfo };
+      });
+
+      trpc.getEvents.utils.setData({ date }, (events) => {
+        return events?.map((event) => {
+          if (event.id === id) {
+            return { ...event, attendees: eventInfo.attendees.length || 0 };
+          }
+          return event;
+        });
+      });
+
+      return { previousEvent, previousEvents };
+    },
+    onSuccess(_d, { id, ...eventData }: RouterInput["updateEvent"], ctx) {
+      if (!id) return;
+
+      const date = get(selectedDate)?.toString();
+
+      trpc.getEvents.utils.invalidate({ date });
+      trpc.getEventById.utils.invalidate({ eventId: id });
+      toast.success(`Event updated successfully !`, { id: "updateEvent" });
+    },
+    onError(_err, { id, ...eventData }: RouterInput["updateEvent"], ctx) {
+      if (!id) return;
+      const date = get(selectedDate)?.toString();
+      trpc.getEvents.utils.setData({ date }, () => ctx.previousEvents);
+      trpc.getEventById.utils.setData({ eventId: id }, () => ctx.previousEvent);
+      toast.error(`Something went wrong while trying to update event info.`, {
+        id: "updateEvent"
+      });
+    }
+  });
 };

@@ -15,6 +15,13 @@
       "when": 1714750855886,
       "tag": "0001_motionless_medusa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1714803355103,
+      "tag": "0002_complex_brood",
+      "breakpoints": true
     }
   ]
 }

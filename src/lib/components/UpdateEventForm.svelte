@@ -6,18 +6,29 @@
   import { createMutation } from "@tanstack/svelte-query";
   import type { DateValue } from "@internationalized/date";
   import { addEventSchema } from "$lib/utilities/zod-schema";
-  import { today, getLocalTimeZone } from "@internationalized/date";
+  import { today, getLocalTimeZone, CalendarDate } from "@internationalized/date";
   import type { RouterInput, RouterOutput } from "$lib/routers";
+  import { twMerge } from "tailwind-merge";
 
   let scheduledDateValue: DateValue | undefined;
+
+  export let event: RouterOutput["getEventById"] | undefined = undefined;
 
   export let onError: (() => void) | undefined = undefined;
   export let onSuccess: (() => void) | undefined = undefined;
 
-  const addEventMutation = createMutation<
-    RouterOutput["addEvent"],
+  const removeAttendeeMutation = createMutation<
+    RouterOutput["removeAttendeeFromEvent"],
     unknown,
-    RouterInput["addEvent"]
+    RouterInput["removeAttendeeFromEvent"]
+  >({
+    mutationKey: ["removeAttendeeFromEvent"]
+  });
+
+  const updateEventMutation = createMutation<
+    RouterOutput["updateEvent"],
+    unknown,
+    RouterInput["updateEvent"]
   >({
     onSettled(data, err) {
       if (err) {
@@ -26,25 +37,31 @@
         onSuccess?.();
       }
     },
-    mutationKey: ["addEvent"]
+    mutationKey: ["updateEvent"]
   });
 
-  const { form, errors, data, touched } = createForm({
+  const { form, errors, setInitialValues, touched, data } = createForm({
     initialValues: {
       title: "",
+      id: undefined,
       scheduledDate: "",
       scheduledTime: "",
       scheduledLocation: "",
-      attendees: [{ name: "", phoneNumber: "", email: "" }]
+      attendees: [{ id: undefined, name: "", phoneNumber: "", email: "" }]
     },
     extend: validator({ schema: addEventSchema }),
     onSubmit(data) {
-      $addEventMutation.mutate({ id: undefined, ...data });
+      if (!event?.id) return;
+      $updateEventMutation.mutate(data);
     }
   });
+
+  // @ts-ignore
+  $: if (event) setInitialValues(event as any);
 </script>
 
 <form use:form method="post" class="gap-4 pt-4 px-1 pb-1 space-y-4 overflow-auto">
+  <input type="hidden" name="id" id="id" bind:value={$data.id} />
   <div class="w-full space-y-0.5">
     <label
       for="title"
@@ -59,8 +76,8 @@
       name="title"
       bind:value={$data.title}
       class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-    focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-    aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
+      focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
+      aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
       placeholder="Enter title for the schedule" />
     {#if $errors.title}
       <small class="block text-destructive text-sm font-medium md:font-semibold">
@@ -81,6 +98,7 @@
       required
       id="scheduledDate"
       showCalendarIcon={false}
+      rawValue={event?.scheduledDate}
       bind:value={scheduledDateValue}
       minValue={today(getLocalTimeZone())}
       placeholder="Enter the date for the schedule"
@@ -105,9 +123,27 @@
           $data.scheduledDate = scheduledDateValue.toString();
         }}
         class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-        hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
+          hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
         Today
       </button>
+
+      {#if event && event.scheduledDate !== $data.scheduledDate}
+        <button
+          type="button"
+          class="flex items-center justify-center text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
+          focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
+          on:click={() => {
+            const date = new Date(event.scheduledDate);
+            scheduledDateValue = new CalendarDate(
+              date.getFullYear(),
+              date.getMonth() + 1,
+              date.getDate()
+            );
+            $data.scheduledDate = event.scheduledDate;
+          }}>
+          <div class="icon-[bi--arrow-counterclockwise] w-4 h-4" />
+        </button>
+      {/if}
     </div>
 
     {#if $errors.scheduledDate}
@@ -130,8 +166,8 @@
       name="scheduledTime"
       bind:value={$data.scheduledTime}
       class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-          focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-          aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
+            focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
+            aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
       placeholder="Enter the time for the schedule" />
 
     <div class="inline-flex items-center space-x-2 py-2">
@@ -142,9 +178,21 @@
           $data.scheduledTime = "ALL DAY";
         }}
         class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-        hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
+          hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
         All Day
       </button>
+
+      {#if event && event.scheduledTime !== $data.scheduledTime}
+        <button
+          type="button"
+          class="flex items-center justify-center text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
+          focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
+          on:click={() => {
+            $data.scheduledTime = event.scheduledTime;
+          }}>
+          <div class="icon-[bi--arrow-counterclockwise] w-4 h-4" />
+        </button>
+      {/if}
     </div>
 
     {#if $errors.scheduledTime}
@@ -167,8 +215,8 @@
       name="scheduledLocation"
       bind:value={$data.scheduledLocation}
       class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-          focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-          aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
+            focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
+            aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
       placeholder="Enter location for the schedule" />
 
     <div class="inline-flex items-center space-x-2 py-2">
@@ -176,7 +224,7 @@
       <button
         type="button"
         class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-        hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
+          hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
         on:click={() => {
           $data.scheduledLocation = "REMOTE";
         }}>
@@ -186,12 +234,24 @@
       <button
         type="button"
         class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-        focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
+          focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
         on:click={() => {
           $data.scheduledLocation = "OFFICE";
         }}>
         Office
       </button>
+
+      {#if event && event.scheduledLocation !== $data.scheduledLocation}
+        <button
+          type="button"
+          class="flex items-center justify-center text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
+          focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
+          on:click={() => {
+            $data.scheduledLocation = event.scheduledLocation;
+          }}>
+          <div class="icon-[bi--arrow-counterclockwise] w-4 h-4" />
+        </button>
+      {/if}
     </div>
 
     {#if $errors.scheduledLocation}
@@ -230,40 +290,89 @@
               id="attendees.{idx}.name"
               name="attendees.{idx}.name"
               bind:value={$data.attendees[idx].name}
-              class="block border w-9/12 rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-            focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-            aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
+              class="block border w-7/12 lg:9/12 rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
+              focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
+              aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
               placeholder="Enter the name of the attendee" />
 
-            {#if $data.attendees.length > 1}
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild let:builder>
-                  <button
-                    {...builder}
-                    use:builder.action
-                    type="button"
-                    on:click={() => {
-                      if (
-                        !$touched.attendees[idx].name ||
-                        confirm("Sure to remove this attendee?")
-                      ) {
-                        $data.attendees = $data.attendees.filter((_a, i) => i !== idx);
-                      }
-                    }}
-                    class="cursor-pointer ml-auto bg-foreground/5 border border-foreground/10 text-destructive focus:ring-destructive/50
-                    size-10 rounded-lg flex items-center justify-center focus:ring-2 focus:ring-destructive focus:ring-offset-2 focus:ring-offset-background">
-                    <div class="icon-[bi--person-x] size-5" />
-                  </button>
-                </Tooltip.Trigger>
-                <Tooltip.Content
-                  align="end"
-                  side="bottom"
-                  sideOffset={10}
-                  class="z-50 overflow-hidden rounded-md bg-foreground/80 backdrop-blur-sm px-3 py-1 text-xs text-background uppercase">
-                  Remove from the list
-                </Tooltip.Content>
-              </Tooltip.Root>
-            {/if}
+            <div class="inline-flex items-center ml-auto gap-2.5">
+              {#if event?.attendees[idx]}
+                {@const wasEmailSent = event.attendees[idx].emailSent === 1}
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild let:builder>
+                    <button
+                      {...builder}
+                      use:builder.action
+                      type="button"
+                      disabled={wasEmailSent}
+                      on:click={() => {
+                        if (!wasEmailSent && confirm("Sure to retry sending email?")) {
+                        }
+                      }}
+                      class={twMerge(
+                        "cursor-pointer ml-auto size-10 rounded-lg flex items-center justify-center",
+                        wasEmailSent &&
+                          "bg-foreground/5 border border-foreground/10 text-green-500",
+
+                        !wasEmailSent &&
+                          "bg-foreground/5 border border-foreground/10 text-destructive focus:ring-destructive/50 focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
+                      )}>
+                      <div
+                        class="size-5"
+                        class:icon-[bi--check-all]={wasEmailSent}
+                        class:icon-[heroicons--exclamation-triangle]={!wasEmailSent} />
+                    </button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content
+                    align="end"
+                    side="bottom"
+                    sideOffset={10}
+                    class="z-50 overflow-hidden rounded-md bg-foreground/80 backdrop-blur-sm px-3 py-1 text-xs text-background uppercase">
+                    {wasEmailSent ? "Email sent successfully!" : "Retry sending email?"}
+                  </Tooltip.Content>
+                </Tooltip.Root>
+              {/if}
+
+              {#if $data.attendees.length > 1}
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild let:builder>
+                    <button
+                      {...builder}
+                      use:builder.action
+                      type="button"
+                      on:click={() => {
+                        const attendeeId = $data.attendees?.[idx]?.id;
+                        if (
+                          event?.id &&
+                          attendeeId &&
+                          confirm("Sure to remove this attendee?")
+                        ) {
+                          $removeAttendeeMutation.mutate({
+                            attendeeId,
+                            eventId: event.id
+                          });
+                        } else if (
+                          !$touched.attendees[idx].name ||
+                          confirm("Sure to remove this attendee?")
+                        ) {
+                          $data.attendees = $data.attendees.filter((_a, i) => i !== idx);
+                        }
+                      }}
+                      class="cursor-pointer ml-auto bg-foreground/5 border border-foreground/10 text-destructive focus:ring-destructive/50
+                      size-10 rounded-lg flex items-center justify-center focus:ring-2 focus:ring-destructive focus:ring-offset-2 focus:ring-offset-background">
+                      <div class="icon-[bi--person-x] size-5" />
+                    </button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content
+                    align="end"
+                    side="bottom"
+                    sideOffset={10}
+                    class="z-50 overflow-hidden rounded-md bg-foreground/80 backdrop-blur-sm px-3 py-1 text-xs text-background uppercase">
+                    Remove from the list
+                  </Tooltip.Content>
+                </Tooltip.Root>
+              {/if}
+            </div>
           </div>
 
           {#if $errors.attendees?.[idx]?.name}
@@ -288,8 +397,8 @@
               name="attendees.{idx}.email"
               bind:value={$data.attendees[idx].email}
               class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-        focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-        aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
+          focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
+          aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
               placeholder="Enter the email of the attendee" />
             {#if $errors.attendees?.[idx]?.email}
               <small class="block text-destructive text-sm font-medium md:font-semibold">
@@ -311,8 +420,8 @@
               name="attendees.{idx}.phoneNumber"
               bind:value={$data.attendees[idx].phoneNumber}
               class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-        focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-        aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
+          focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
+          aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
               placeholder="Enter the phone number of the attendee" />
             {#if $errors.attendees?.[idx]?.phoneNumber}
               <small class="block text-destructive text-sm font-medium md:font-semibold">
@@ -329,13 +438,19 @@
     on:click={() => {
       $data.attendees = [
         ...$data.attendees,
-        { name: "", email: "", phoneNumber: "", key: String($data.attendees.length + 1) }
+        {
+          name: "",
+          email: "",
+          id: undefined,
+          phoneNumber: "",
+          key: String($data.attendees.length + 1)
+        }
       ];
     }}
     type="button"
     class="
-  block text-sm font-semibold bg-muted text-muted-foreground rounded-lg px-4 py-2
-  hover:bg-muted/90 focus:ring-2 focus:ring-offset-2 focus:ring-muted focus:ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-90">
+    block text-sm font-semibold bg-muted text-muted-foreground rounded-lg px-4 py-2
+    hover:bg-muted/90 focus:ring-2 focus:ring-offset-2 focus:ring-muted focus:ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-90">
     Add Attendee ({$data.attendees.length})
   </button>
 
@@ -343,8 +458,8 @@
   <button
     type="submit"
     class="
-    text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 w-full lg:w-auto
-    hover:bg-primary/90 focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-90">
+      text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 w-full lg:w-auto
+      hover:bg-primary/90 focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-90">
     Submit
   </button>
 </form>

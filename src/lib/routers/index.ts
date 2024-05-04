@@ -64,6 +64,8 @@ export const appRouter = t.router({
         where: eq(schema.events.id, input.eventId)
       });
 
+      if (!event) throw new TRPCError({ message: "Event not found", code: "NOT_FOUND" });
+
       const attendees = await db.query.attendees.findMany({
         where: eq(schema.attendees.eventId, input.eventId)
       });
@@ -127,7 +129,7 @@ export const appRouter = t.router({
       return { eventId, attendeesList };
     });
 
-    const failedEmailsResults = await bulkSendInvitations(
+    const successfulEmailsResults = await bulkSendInvitations(
       dbResult.attendeesList.map((r) => ({
         email: r.email,
         attendeeId: r.id,
@@ -139,21 +141,101 @@ export const appRouter = t.router({
       }))
     );
 
-    if (failedEmailsResults.length) {
-      db.update(schema.attendees)
-        .set({ emailSent: 0 })
+    if (successfulEmailsResults.length) {
+      await db
+        .update(schema.attendees)
+        .set({ emailSent: 1 })
         .where(
           and(
             eq(schema.attendees.eventId, dbResult.eventId),
             inArray(
               schema.attendees.email,
-              failedEmailsResults.map((f) => f.email)
+              successfulEmailsResults.map((f) => f.email)
             )
           )
         );
     }
+
+    return true;
   }),
-  updateEvent: t.procedure.input(addEventSchema).mutation(function () {})
+
+  removeAttendeeFromEvent: t.procedure
+    .input(
+      z.object({
+        eventId: z.number(),
+        attendeeId: z.number()
+      })
+    )
+    .mutation(async function ({ input }) {
+      return await db
+        .delete(schema.attendees)
+        .where(
+          and(
+            eq(schema.attendees.eventId, input.eventId),
+            eq(schema.attendees.id, input.attendeeId)
+          )
+        );
+    }),
+  updateEvent: t.procedure.input(addEventSchema).mutation(async function ({ input }) {
+    const { attendees, ...eventInfo } = input;
+
+    if (!eventInfo || !eventInfo.id) return;
+
+    const eventId = eventInfo.id!;
+    const oldattendeesData = await db.query.attendees.findMany({
+      where: (aud, { eq }) => eq(aud.eventId, eventId)
+    });
+
+    const oldAttendees = oldattendeesData.map((a) => a.email);
+    const newAttendees = attendees.filter(
+      (attendee) => !oldAttendees.includes(attendee.email)
+    );
+
+    const dbResult = await db.transaction(async function (tx) {
+      await tx
+        .update(schema.events)
+        .set({ ...eventInfo })
+        .where(eq(schema.events.id, eventId));
+
+      if (newAttendees.length) {
+        return await tx
+          .insert(schema.attendees)
+          .values(newAttendees.map((attendee) => ({ ...attendee, eventId })))
+          .returning();
+      }
+    });
+
+    if (dbResult?.length) {
+      const successfulEmailsResults = await bulkSendInvitations(
+        dbResult.map((r) => ({
+          email: r.email,
+          attendeeId: r.id,
+          eventId: r.eventId,
+          eventTitle: eventInfo.title,
+          eventDate: eventInfo.scheduledDate,
+          eventTime: eventInfo.scheduledTime,
+          eventLocation: eventInfo.scheduledLocation
+        }))
+      );
+
+      if (successfulEmailsResults.length) {
+        await db
+          .update(schema.attendees)
+          .set({ emailSent: 1 })
+          .where(
+            and(
+              eq(schema.attendees.eventId, eventId),
+              inArray(
+                schema.attendees.email,
+                successfulEmailsResults.map((f) => f.email)
+              )
+            )
+          );
+      }
+    }
+
+    return true;
+  })
 });
 
 export type AppRouter = typeof appRouter;

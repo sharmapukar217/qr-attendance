@@ -14,8 +14,9 @@ export const events = sqliteTable("events", {
 
 export const attendees = sqliteTable("attendees", {
   id: integer("id").primaryKey(),
-  name: text("name"),
+  name: text("name").notNull(),
   email: text("email").notNull(),
+  phoneNumber: text("phone_number"),
   eventId: integer("event_id").notNull(),
   emailSent: int("email_sent").default(0),
   status: text("status").notNull().default("unknown")

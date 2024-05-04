@@ -53,9 +53,6 @@
           <AddEventForm
             onSuccess={() => {
               addEventDialogOpened = false;
-            }}
-            onError={() => {
-              addEventDialogOpened = true;
             }} />
         </Dialog.Content>
       </Dialog.Root>

@@ -1,79 +1,22 @@
 <script lang="ts">
-  import * as Form from "formsnap";
-  import { DropdownMenu, Dialog } from "bits-ui";
-  import type { RouterInput, RouterOutput } from "$lib/routers";
-  import { createMutation } from "@tanstack/svelte-query";
-  import { trpc } from "$lib/utilities/trpc-client";
-  import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
-  import { updateEventSchema } from "$lib/utilities/zod-schema";
-  import DatePicker from "./DatePicker.svelte";
-  import {
-    type DateValue,
-    today,
-    getLocalTimeZone,
-    CalendarDate
-  } from "@internationalized/date";
-  import { toast } from "svelte-sonner";
   import { twMerge } from "tailwind-merge";
+  import { DropdownMenu, Dialog } from "bits-ui";
+  import { createMutation } from "@tanstack/svelte-query";
+
+  import { trpc } from "$lib/utilities/trpc-client";
+  import UpdateEventForm from "./UpdateEventForm.svelte";
+  import type { RouterInput, RouterOutput } from "$lib/routers";
 
   let editEventDialogOpened = false;
   export let showDate: boolean = true;
   export let event: RouterOutput["getEvents"][number];
 
   const date = new Date(event.scheduledDate);
-  let scheduledDateValue: DateValue | undefined;
   const todayDate = new Date(new Date().toDateString());
-
-  const eventQuery = trpc.getEventById.query(
-    { eventId: event.id },
-    {
-      select(data) {
-        return {
-          ...data,
-          attendees: data.attendees.map((aud) => aud.email).join(", ")
-        };
-      }
-    }
-  );
-
-  $: if (editEventDialogOpened === true && $eventQuery.data?.scheduledDate) {
-    const d = new Date($eventQuery.data.scheduledDate);
-    scheduledDateValue = new CalendarDate(d.getFullYear(), d.getMonth(), d.getDay());
-  }
-
+  const eventQuery = trpc.getEventById.query({ eventId: event.id });
   const deleteEventMutation = createMutation<any, any, RouterInput["deleteEvent"]>({
     mutationKey: ["deleteEvent"]
   });
-
-  $: form = superForm(
-    { ...$eventQuery?.data },
-    {
-      // SPA: true,
-      validationMethod: "onblur",
-      validators: zodClient(updateEventSchema),
-      onResult({ result }) {
-        if (result.type === "success") {
-          if (!$eventQuery.data?.id) return;
-
-          const eventId = $eventQuery.data.id;
-
-          trpc.getEvents.utils.cancel();
-          trpc.getEventById.utils.cancel({ eventId });
-
-          trpc.getEvents.utils.invalidate({});
-          trpc.getEventById.utils.invalidate({ eventId });
-          toast.success("Event details updated successfully.");
-        } else if (result.type === "error") {
-          toast.error("Oops! Something went wrong while trying to update event details.");
-          if (!$eventQuery.data?.id) return;
-          trpc.getEventById.utils.invalidate({ eventId: $eventQuery.data.id });
-        }
-      }
-    }
-  );
-
-  $: formData = form.form;
 </script>
 
 <li
@@ -170,203 +113,10 @@
       </Dialog.Close>
     </div>
 
-    <form
-      method="post"
-      use:form.enhance
-      spellcheck="false"
-      action="/?/updateEvent"
-      class="gap-4 pt-4 px-1 pb-1 space-y-4 overflow-auto">
-      <div class="w-full space-y-0.5">
-        <Form.Field {form} name="title">
-          <Form.Control let:attrs>
-            <Form.Label
-              class="text-sm font-medium text-muted-foreground inline-flex items-center cursor-pointer">
-              <div class="icon-[bi--fonts] w-5 h-5 me-2"></div>
-              <div>Schedule Title</div>
-            </Form.Label>
-            <input
-              {...attrs}
-              type="text"
-              name="title"
-              bind:value={$formData.title}
-              class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-            focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-            aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
-              placeholder="Enter title for the schedule" />
-
-            <Form.FieldErrors class="text-sm text-destructive" />
-          </Form.Control>
-        </Form.Field>
-      </div>
-
-      <input type="hidden" id="id" name="id" bind:value={$formData.id} />
-      <div class="w-full space-y-0.5">
-        <Form.Field {form} name="scheduledDate">
-          <Form.Control let:attrs>
-            <Form.Label
-              class="text-sm font-medium text-muted-foreground inline-flex items-center cursor-pointer">
-              <div class="icon-[heroicons--calendar-days] w-5 h-5 me-2"></div>
-              <div>Schedule Date</div>
-            </Form.Label>
-
-            <DatePicker
-              {...attrs}
-              showCalendarIcon={false}
-              value={scheduledDateValue}
-              minValue={today(getLocalTimeZone())}
-              placeholder="Enter the date for the schedule"
-              classes={{
-                popover: "max-md:ml-2",
-                trigger: [
-                  "block w-full text-start !ring-offset-0",
-                  attrs["aria-invalid"]
-                    ? "!ring-destructive text-destructive border border-destructive"
-                    : ""
-                ]
-              }}
-              onValueChange={function (v) {
-                formData.set({ ...$formData, scheduledDate: v?.toString() ?? "" });
-              }} />
-
-            <Form.FieldErrors class="text-sm text-destructive" />
-
-            <div class="inline-flex items-center space-x-2 py-2">
-              <div class="text-xs font-medium text-muted-foreground my-auto">Help:</div>
-              <button
-                type="button"
-                on:click={() => {
-                  scheduledDateValue = today(getLocalTimeZone());
-                  formData.set({
-                    ...$formData,
-                    scheduledDate: scheduledDateValue.toString()
-                  });
-                }}
-                class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-            hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
-                Today
-              </button>
-            </div>
-          </Form.Control>
-        </Form.Field>
-      </div>
-
-      <div class="w-full space-y-0.5">
-        <Form.Field {form} name="scheduledTime">
-          <Form.Control let:attrs>
-            <Form.Label
-              class="text-sm font-medium text-muted-foreground inline-flex items-center cursor-pointer">
-              <div class="icon-[heroicons--map-pin] w-5 h-5 me-2"></div>
-              <div>Time</div>
-            </Form.Label>
-            <input
-              {...attrs}
-              type="text"
-              name="scheduledTime"
-              bind:value={$formData.scheduledTime}
-              class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-              focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-              aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
-              placeholder="Enter the time for the schedule" />
-            <Form.FieldErrors class="text-sm text-destructive" />
-
-            <div class="inline-flex items-center space-x-2 py-2">
-              <div class="text-xs font-medium text-muted-foreground my-auto">Help:</div>
-              <button
-                type="button"
-                on:click={() => {
-                  $formData.scheduledTime = "ALL DAY";
-                }}
-                class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-            hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background">
-                All Day
-              </button>
-            </div>
-          </Form.Control>
-        </Form.Field>
-      </div>
-
-      <div class="w-full space-y-0.5">
-        <Form.Field {form} name="scheduledLocation">
-          <Form.Control let:attrs>
-            <Form.Label
-              class="text-sm font-medium text-muted-foreground inline-flex items-center cursor-pointer">
-              <div class="icon-[heroicons--map-pin] w-5 h-5 me-2"></div>
-              <div>Location</div>
-            </Form.Label>
-
-            <input
-              {...attrs}
-              name="scheduledLocation"
-              bind:value={$formData.scheduledLocation}
-              class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-              focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-              aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
-              placeholder="Enter location for the schedule" />
-            <Form.FieldErrors class="text-sm text-destructive" />
-
-            <div class="inline-flex items-center space-x-2 py-2">
-              <div class="text-xs font-medium text-muted-foreground my-auto">Help:</div>
-              <button
-                type="button"
-                class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-            hover:bg-muted/85 focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
-                on:click={() => {
-                  $formData.scheduledLocation = "REMOTE";
-                }}>
-                Remote
-              </button>
-
-              <button
-                type="button"
-                class="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg
-            focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background"
-                on:click={() => {
-                  $formData.scheduledLocation = "OFFICE";
-                }}>
-                Office
-              </button>
-            </div>
-          </Form.Control>
-        </Form.Field>
-      </div>
-
-      <div class="w-full space-y-0.5">
-        <Form.Field {form} name="scheduledLocation">
-          <Form.Control let:attrs>
-            <Form.Label
-              class="text-sm font-medium text-muted-foreground inline-flex items-center cursor-pointer">
-              <div class="icon-[heroicons--calendar-days] w-5 h-5 me-2"></div>
-              <div>Attendees</div>
-            </Form.Label>
-            <textarea
-              rows={4}
-              {...attrs}
-              name="attendees"
-              bind:value={$formData.attendees}
-              class="border w-full rounded-md text-sm font-medium lg:font-semibold px-3 py-2 text-muted-foreground bg-muted/40
-              focus:outline-none focus:text-foreground focus:ring-2 focus:ring-primary
-              aria-invalid:border-destructive aria-invalid:ring-destructive aria-invalid:text-destructive aria-invalid:placeholder-destructive"
-              placeholder="Enter emails of attendees, comma separated" />
-            <Form.FieldErrors class="text-sm text-destructive" />
-
-            <small class="text-muted-foreground text-xs">
-              Comma separated list of emails.
-            </small>
-
-            <small class="text-muted-foreground text-xs">
-              An invitation email would be sent to newly added emails.
-            </small>
-          </Form.Control>
-        </Form.Field>
-      </div>
-
-      <button
-        type="submit"
-        class="
-      text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 w-full lg:w-auto
-      hover:bg-primary/90 focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background focus:outline-none">
-        Submit
-      </button>
-    </form>
+    <UpdateEventForm
+      event={$eventQuery.data}
+      onSuccess={() => {
+        editEventDialogOpened = false;
+      }} />
   </Dialog.Content>
 </Dialog.Root>
