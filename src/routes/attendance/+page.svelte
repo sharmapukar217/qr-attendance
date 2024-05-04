@@ -56,14 +56,19 @@
         filter: { exclude: true }
       }
     }),
-    // table.column({
-    //   header: "Name",
-    //   accessor: "name",
-    //   plugins: { sort: { disable: false }, filter: { exclude: false } }
-    // }),
+    table.column({
+      header: "Name",
+      accessor: "name",
+      plugins: { sort: { disable: false }, filter: { exclude: false } }
+    }),
     table.column({
       accessor: "email",
       header: "Email",
+      plugins: { sort: { disable: false }, filter: { exclude: false } }
+    }),
+    table.column({
+      header: "Phone Number",
+      accessor: "phoneNumber",
       plugins: { sort: { disable: false }, filter: { exclude: false } }
     }),
     table.column({
