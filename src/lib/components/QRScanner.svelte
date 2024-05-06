@@ -48,7 +48,7 @@
       });
 
       if (isAlreadyPresent && isAlreadyPresent.length >= 1) {
-        message = `Already marked as \`present\` for ${data.email}`;
+        message = `Already marked as \`present\` for \`${data.name}\``;
         status = "success";
         return;
       }
@@ -69,7 +69,7 @@
         });
       });
 
-      message = `Updated status for ${data.email} to \`present\``;
+      message = `Updated status for \`${data.name}\` to \`present\``;
       status = "success";
     } catch (err) {
       message = `Can't update status for <email here>`;

@@ -140,6 +140,9 @@ export const appRouter = t.router({
         dbResult.attendeesList.map((r) => ({
           email: r.email,
           attendeeId: r.id,
+          attendeeName: r.name,
+          attendeeEmail: r.email,
+          attendeePhoneNumber: r.phoneNumber,
           eventId: r.eventId,
           eventTitle: eventInfo.title,
           eventDate: eventInfo.scheduledDate,
@@ -218,6 +221,10 @@ export const appRouter = t.router({
         await dbResult.map((r) => ({
           email: r.email,
           attendeeId: r.id,
+          attendeeName: r.name,
+          attendeeEmail: r.email,
+          attendeePhoneNumber: r.phoneNumber,
+
           eventId: r.eventId,
           eventTitle: eventInfo.title,
           eventDate: eventInfo.scheduledDate,
@@ -250,6 +257,8 @@ export const appRouter = t.router({
       z.object({
         eventId: z.number(),
         attendeeId: z.number(),
+        name: z.string().trim(),
+        phoneNumber: z.string().nullable(),
         email: z.string().trim().email()
       })
     )
@@ -263,6 +272,10 @@ export const appRouter = t.router({
       const successfulEmails = await bulkSendInvitations([
         {
           attendeeId: input.attendeeId,
+          attendeeName: input.name,
+          attendeeEmail: input.email,
+          attendeePhoneNumber: input.phoneNumber,
+
           email: input.email,
           eventId: input.eventId,
           eventDate: event.scheduledDate,

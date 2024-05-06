@@ -165,7 +165,7 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
       const attendee = ctx?.previousEvent?.attendees?.find(
         (a: any) => a.id === attendeeId
       );
-      toast.success(`Attendee with email \`${attendee.email}\` removed successfully !`, {
+      toast.success(`Attendee \`${attendee.name}\` removed successfully !`, {
         id: "removeAttendeeFromEvent"
       });
 
@@ -181,7 +181,7 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
       trpc.getEvents.utils.setData({ date }, () => ctx.previousEvents);
       trpc.getEventById.utils.setData({ eventId }, () => ctx.previousEvent);
       toast.error(
-        `Something went wrong while trying to remove \`${attendee.email}\` from the list.`,
+        `Something went wrong while trying to remove \`${attendee.name}\` from the list.`,
         {
           id: "removeAttendeeFromEvent"
         }
@@ -268,13 +268,13 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
             };
           });
 
-          toast.success(`Invitation email sent sucessfully to \`${data.email}\`!`, {
+          toast.success(`Invitation email sent sucessfully to \`${data.name}\`!`, {
             id: "resendInvitation"
           });
           trpc.getEventById.utils.invalidate({ eventId: data.eventId });
         } else {
           toast.error(
-            `Something went wrong while trying to resend invitation email! to \`${data.email}\`!`,
+            `Something went wrong while trying to resend invitation email! to \`${data.name}\`!`,
             {
               id: "resendInvitationn"
             }
@@ -282,7 +282,7 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
         }
       } catch {
         toast.error(
-          `Something went wrong while trying to resend invitation email! to \`${data.email}\`!`,
+          `Something went wrong while trying to resend invitation email! to \`${data.name}\`!`,
           {
             id: "resendInvitation"
           }

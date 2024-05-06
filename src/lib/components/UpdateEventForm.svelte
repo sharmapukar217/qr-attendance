@@ -328,7 +328,9 @@
                           $resendInvitationMutation.mutate({
                             eventId: event.id,
                             email: event.attendees[idx].email,
-                            attendeeId: event.attendees[idx].id
+                            attendeeId: event.attendees[idx].id,
+                            name: event.attendees[idx].name,
+                            phoneNumber: event.attendees[idx].phoneNumber
                           });
                         }
                       }}

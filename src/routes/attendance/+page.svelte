@@ -6,10 +6,7 @@
   import { Select, DropdownMenu } from "bits-ui";
   import { today, getLocalTimeZone } from "@internationalized/date";
   import { Render, Subscribe, createRender, createTable } from "svelte-headless-table";
-  import {
-    addSortBy,
-    addTableFilter
-  } from "svelte-headless-table/plugins";
+  import { addSortBy, addTableFilter } from "svelte-headless-table/plugins";
 
   import type { RouterOutput } from "$lib/routers";
   import { trpc } from "$lib/utilities/trpc-client";
@@ -70,9 +67,11 @@
 
       const qr = await QR.toDataURL(
         JSON.stringify({
+          name: attendee.name,
           email: attendee.email,
           attendeeId: attendee.id,
-          eventId: attendee.eventId
+          eventId: attendee.eventId,
+          phoneNumber: attendee.phoneNumber
         })
       );
 

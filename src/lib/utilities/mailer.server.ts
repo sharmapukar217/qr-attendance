@@ -24,6 +24,9 @@ type InvitationData = {
 
   eventId: number;
   attendeeId: number;
+  attendeeName: string;
+  attendeeEmail: string;
+  attendeePhoneNumber: string | null;
 };
 
 export const bulkSendInvitations = async (data: InvitationData[]) => {
