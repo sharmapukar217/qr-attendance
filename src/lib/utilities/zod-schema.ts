@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const addEventSchema = z.object({
   id: z.number().optional(),
+  shouldSendEmail: z.boolean().default(true),
   title: z.string().trim().min(1, "Please provide a title for the event."),
   scheduledDate: z
     .string({ required_error: "Please provide the scheduled date." })

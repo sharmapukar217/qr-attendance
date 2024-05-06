@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { Select } from "bits-ui";
+  import Zip from "jszip";
+  import QR from "qrcode";
   import { toast } from "svelte-sonner";
   import { readable } from "svelte/store";
+  import { Select, DropdownMenu } from "bits-ui";
   import { today, getLocalTimeZone } from "@internationalized/date";
   import { Render, Subscribe, createRender, createTable } from "svelte-headless-table";
   import {
-    addPagination,
     addSortBy,
     addTableFilter
   } from "svelte-headless-table/plugins";
@@ -60,6 +61,59 @@
     }
   }
 
+  async function exportZip(attendees: any[]) {
+    toast.loading("Please wait while generating zip file...", { id: "exportFile" });
+
+    const zip = new Zip();
+    for (const attendee of attendees) {
+      console.debug("attendee:", attendee);
+
+      const qr = await QR.toDataURL(
+        JSON.stringify({
+          email: attendee.email,
+          attendeeId: attendee.id,
+          eventId: attendee.eventId
+        })
+      );
+
+      const idx = qr.indexOf("base64,") + "base64,".length;
+      zip.file(`${attendee.name}_${attendee.eventId}.png`, qr.substring(idx), {
+        base64: true
+      });
+    }
+
+    const zipData = await zip.generateAsync({
+      type: "blob",
+      streamFiles: true
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(zipData);
+
+    const event = $events.data?.find((e) => e.id === Number(eventId));
+    if (!event) {
+      toast.error("Something went wrong. Please try again later", { id: "exportFile" });
+    } else {
+      link.download = `${event.title.trim()}_${Date.now()}_qr_codes.zip`;
+      link.click();
+
+      toast.success("Downloadig zip file...", { id: "exportFile" });
+    }
+  }
+
+  const exportAsButtons = [
+    {
+      title: "Export as Zip ( QR )",
+      icon: "icon-[bi--file-earmark-zip]",
+      onClick: () => exportZip($attendees.data || [])
+    },
+    {
+      title: "Export as CSV ( Data )",
+      icon: "icon-[bi--filetype-csv]",
+      onClick: () => tableToSpreadSheet()
+    }
+  ];
+
   $: dates = new Set($allEvents.data?.map((d) => d.scheduledDate) ?? []);
   $: hasEvents = dates.has(value?.toString());
 
@@ -75,7 +129,7 @@
 
   $: data = readable($attendees.data ?? []);
   $: table = createTable<RouterOutput["getAttendees"][number]>(data, {
-    page: addPagination(),
+    // page: addPagination(),
     sort: addSortBy({ disableMultiSort: true }),
     filter: addTableFilter({
       fn: ({ filterValue, value }) => value.includes(filterValue)
@@ -206,13 +260,32 @@
 
     <div class="ml-auto flex items-center gap-4">
       {#if eventId}
-        <button
-          on:click={() => tableToSpreadSheet()}
-          class="bg-muted text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-3 rounded-lg py-2.5 px-3
-        focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background hover:bg-muted/85">
-          <div class="icon-[bi--filetype-csv] size-4" />
-          <span>Export</span>
-        </button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger
+            class="bg-muted text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-3 rounded-lg py-2.5 px-3
+          focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:ring-offset-background hover:bg-muted/85">
+            <div class="icon-[bi--filetype-csv] size-4" />
+            <span>Export</span>
+          </DropdownMenu.Trigger>
+
+          <DropdownMenu.Content
+            align="end"
+            sideOffset={10}
+            class="z-50 min-w-[8rem] rounded-md border bg-background p-1 text-foreground shadow-md focus:outline-none">
+            {#each exportAsButtons as btn}
+              <DropdownMenu.Item asChild let:builder>
+                <button
+                  {...builder}
+                  use:builder.action
+                  on:click={btn.onClick}
+                  class="w-full relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground data-[disabled]:opacity-50">
+                  <div class="{btn.icon} w-4 h-4 me-3" />
+                  <div>{btn.title}</div>
+                </button>
+              </DropdownMenu.Item>
+            {/each}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       {/if}
       {#if hasEvents && value && todayDate.compare(value) == 0 && eventId}
         <QrScanner eventId={Number(eventId)} />

@@ -112,7 +112,7 @@ export const appRouter = t.router({
     }),
 
   addEvent: t.procedure.input(addEventSchema).mutation(async function ({ input }) {
-    const { attendees, ...eventInfo } = input;
+    const { attendees, shouldSendEmail, ...eventInfo } = input;
     const dbResult = await db.transaction(async function (tx) {
       const events = await tx
         .insert(schema.events)
@@ -123,37 +123,45 @@ export const appRouter = t.router({
 
       const attendeesList = await tx
         .insert(schema.attendees)
-        .values(attendees.map((attendee) => ({ ...attendee, eventId })))
+        .values(
+          attendees.map((attendee) => ({
+            ...attendee,
+            eventId,
+            emailSent: shouldSendEmail ? 0 : 1
+          }))
+        )
         .returning();
 
       return { eventId, attendeesList };
     });
 
-    const successfulEmailsResults = await bulkSendInvitations(
-      dbResult.attendeesList.map((r) => ({
-        email: r.email,
-        attendeeId: r.id,
-        eventId: r.eventId,
-        eventTitle: eventInfo.title,
-        eventDate: eventInfo.scheduledDate,
-        eventTime: eventInfo.scheduledTime,
-        eventLocation: eventInfo.scheduledLocation
-      }))
-    );
+    if (shouldSendEmail) {
+      const successfulEmailsResults = await bulkSendInvitations(
+        dbResult.attendeesList.map((r) => ({
+          email: r.email,
+          attendeeId: r.id,
+          eventId: r.eventId,
+          eventTitle: eventInfo.title,
+          eventDate: eventInfo.scheduledDate,
+          eventTime: eventInfo.scheduledTime,
+          eventLocation: eventInfo.scheduledLocation
+        }))
+      );
 
-    if (successfulEmailsResults.length) {
-      await db
-        .update(schema.attendees)
-        .set({ emailSent: 1 })
-        .where(
-          and(
-            eq(schema.attendees.eventId, dbResult.eventId),
-            inArray(
-              schema.attendees.email,
-              successfulEmailsResults.map((f) => f.email)
+      if (successfulEmailsResults.length) {
+        await db
+          .update(schema.attendees)
+          .set({ emailSent: 1 })
+          .where(
+            and(
+              eq(schema.attendees.eventId, dbResult.eventId),
+              inArray(
+                schema.attendees.email,
+                successfulEmailsResults.map((f) => f.email)
+              )
             )
-          )
-        );
+          );
+      }
     }
 
     return true;
