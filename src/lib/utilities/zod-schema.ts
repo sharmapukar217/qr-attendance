@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const addEventSchema = z.object({
   id: z.number().optional(),
-  shouldSendEmail: z.boolean().default(true),
+  // shouldSendEmail: z.boolean().default(true),
   title: z.string().trim().min(1, "Please provide a title for the event."),
   scheduledDate: z
     .string({ required_error: "Please provide the scheduled date." })
@@ -17,28 +17,30 @@ export const addEventSchema = z.object({
     .object({
       id: z.number().optional(),
       name: z.string().trim().min(1, "Please provide the name of the attendee."),
-      email: z
-        .string({ required_error: "Please enter the email address of the attendee." })
-        .trim()
-        .email("Please provide a valid email address!"),
-      phoneNumber: z.string().trim().optional()
+      // email: z
+      //   .string({ required_error: "Please enter the email address of the attendee." })
+      //   .trim()
+      //   .email("Please provide a valid email address!"),
+      phoneNumber: z.string().trim().optional(),
+      role: z.string().optional(),
+      office: z.string().optional()
     })
     .array()
-    .superRefine((values, ctx) => {
-      const seen = new Set<string>();
-      for (const [i, value] of values.entries()) {
-        if (!!value.email && seen.has(value.email)) {
-          console.log(i);
-          ctx.addIssue({
-            path: [i, "email"],
-            code: z.ZodIssueCode.custom,
-            message: "This email is already in the list"
-          });
-        } else {
-          seen.add(value.email);
-        }
-      }
-    })
+  // .superRefine((values, ctx) => {
+  //   const seen = new Set<string>();
+  //   for (const [i, value] of values.entries()) {
+  //     if (!!value.email && seen.has(value.email)) {
+  //       console.log(i);
+  //       ctx.addIssue({
+  //         path: [i, "email"],
+  //         code: z.ZodIssueCode.custom,
+  //         message: "This email is already in the list"
+  //       });
+  //     } else {
+  //       seen.add(value.email);
+  //     }
+  //   }
+  // })
 });
 
 export const updateEventSchema = z.object({

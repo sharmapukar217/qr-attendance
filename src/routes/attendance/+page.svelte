@@ -16,6 +16,7 @@
   import DatePicker from "$lib/components/DatePicker.svelte";
   import MainLayout from "$lib/components/MainLayout.svelte";
   import PinChecker from "$lib/components/PinChecker.svelte";
+  import { util } from "zod";
 
   let eventId: string | undefined;
   let tableRef: HTMLTableElement | undefined;
@@ -25,18 +26,19 @@
 
   const allEvents = trpc.getEvents.query({ date: undefined });
 
-  function tableToSpreadSheet() {
+  async function tableToSpreadSheet() {
     toast.loading("Please wait while generating csv file...", { id: "exportFile" });
 
     let csvContent = "";
-    const header = ["Name", "Email", "Phone Number", "Status"].join(",") + "\n";
+    const header = ["Name", "Phone Number", "Office", "Role", "Status"].join(",") + "\n";
     csvContent += header;
 
     $attendees.data?.forEach((attendee) => {
       const values = [
         attendee.name,
-        attendee.email,
         attendee.phoneNumber,
+        attendee.office,
+        attendee.role,
         attendee.status
       ].join(",");
       csvContent += values + "\n";
@@ -68,7 +70,6 @@
       const qr = await QR.toDataURL(
         JSON.stringify({
           name: attendee.name,
-          email: attendee.email,
           attendeeId: attendee.id,
           eventId: attendee.eventId,
           phoneNumber: attendee.phoneNumber
@@ -150,14 +151,22 @@
       plugins: { sort: { disable: false }, filter: { exclude: false } }
     }),
     table.column({
-      accessor: "email",
-      header: "Email",
-      plugins: { sort: { disable: false }, filter: { exclude: false } }
+      accessor: "office",
+      header: "Office"
     }),
+    // table.column({
+    //   accessor: "email",
+    //   header: "Email",
+    //   plugins: { sort: { disable: false }, filter: { exclude: false } }
+    // }),
     table.column({
       header: "Phone Number",
       accessor: "phoneNumber",
       plugins: { sort: { disable: false }, filter: { exclude: false } }
+    }),
+    table.column({
+      accessor: "role",
+      header: "Role"
     }),
     table.column({
       accessor: "status",

@@ -93,7 +93,7 @@ export const appRouter = t.router({
       z.object({
         eventId: z.number(),
         attendeeId: z.number(),
-        email: z.string().trim().email(),
+        name: z.string().trim(),
         status: z.enum(["present", "absent"])
       })
     )
@@ -103,7 +103,7 @@ export const appRouter = t.router({
         .set({ status: input.status })
         .where(
           and(
-            eq(schema.attendees.id, input.attendeeId),
+            eq(schema.attendees.name, input.name),
             eq(schema.attendees.eventId, input.eventId)
           )
         );
@@ -112,7 +112,7 @@ export const appRouter = t.router({
     }),
 
   addEvent: t.procedure.input(addEventSchema).mutation(async function ({ input }) {
-    const { attendees, shouldSendEmail, ...eventInfo } = input;
+    const { attendees, ...eventInfo } = input;
     const dbResult = await db.transaction(async function (tx) {
       const events = await tx
         .insert(schema.events)
@@ -127,7 +127,7 @@ export const appRouter = t.router({
           attendees.map((attendee) => ({
             ...attendee,
             eventId,
-            emailSent: shouldSendEmail ? 0 : 1
+            emailSent: 1
           }))
         )
         .returning();
@@ -135,37 +135,37 @@ export const appRouter = t.router({
       return { eventId, attendeesList };
     });
 
-    if (shouldSendEmail) {
-      const successfulEmailsResults = await bulkSendInvitations(
-        dbResult.attendeesList.map((r) => ({
-          email: r.email,
-          attendeeId: r.id,
-          attendeeName: r.name,
-          attendeeEmail: r.email,
-          attendeePhoneNumber: r.phoneNumber,
-          eventId: r.eventId,
-          eventTitle: eventInfo.title,
-          eventDate: eventInfo.scheduledDate,
-          eventTime: eventInfo.scheduledTime,
-          eventLocation: eventInfo.scheduledLocation
-        }))
-      );
+    // if (shouldSendEmail) {
+    //   const successfulEmailsResults = await bulkSendInvitations(
+    //     dbResult.attendeesList.map((r) => ({
+    //       email: r.email,
+    //       attendeeId: r.id,
+    //       attendeeName: r.name,
+    //       attendeeEmail: r.email,
+    //       attendeePhoneNumber: r.phoneNumber,
+    //       eventId: r.eventId,
+    //       eventTitle: eventInfo.title,
+    //       eventDate: eventInfo.scheduledDate,
+    //       eventTime: eventInfo.scheduledTime,
+    //       eventLocation: eventInfo.scheduledLocation
+    //     }))
+    //   );
 
-      if (successfulEmailsResults.length) {
-        await db
-          .update(schema.attendees)
-          .set({ emailSent: 1 })
-          .where(
-            and(
-              eq(schema.attendees.eventId, dbResult.eventId),
-              inArray(
-                schema.attendees.email,
-                successfulEmailsResults.map((f) => f.email)
-              )
-            )
-          );
-      }
-    }
+    //   if (successfulEmailsResults.length) {
+    //     await db
+    //       .update(schema.attendees)
+    //       .set({ emailSent: 1 })
+    //       .where(
+    //         and(
+    //           eq(schema.attendees.eventId, dbResult.eventId),
+    //           inArray(
+    //             schema.attendees.email,
+    //             successfulEmailsResults.map((f) => f.email)
+    //           )
+    //         )
+    //       );
+    //   }
+    // }
 
     return true;
   }),
@@ -197,9 +197,9 @@ export const appRouter = t.router({
       where: (aud, { eq }) => eq(aud.eventId, eventId)
     });
 
-    const oldAttendees = oldattendeesData.map((a) => a.email);
+    const oldAttendees = oldattendeesData.map((a) => a.name);
     const newAttendees = attendees.filter(
-      (attendee) => !oldAttendees.includes(attendee.email)
+      (attendee) => !oldAttendees.includes(attendee.name)
     );
 
     const dbResult = await db.transaction(async function (tx) {
@@ -216,38 +216,38 @@ export const appRouter = t.router({
       }
     });
 
-    if (dbResult?.length) {
-      const successfulEmailsResults = await bulkSendInvitations(
-        await dbResult.map((r) => ({
-          email: r.email,
-          attendeeId: r.id,
-          attendeeName: r.name,
-          attendeeEmail: r.email,
-          attendeePhoneNumber: r.phoneNumber,
+    // if (dbResult?.length) {
+    //   const successfulEmailsResults = await bulkSendInvitations(
+    //     await dbResult.map((r) => ({
+    //       email: r.email,
+    //       attendeeId: r.id,
+    //       attendeeName: r.name,
+    //       attendeeEmail: r.email,
+    //       attendeePhoneNumber: r.phoneNumber,
 
-          eventId: r.eventId,
-          eventTitle: eventInfo.title,
-          eventDate: eventInfo.scheduledDate,
-          eventTime: eventInfo.scheduledTime,
-          eventLocation: eventInfo.scheduledLocation
-        }))
-      );
+    //       eventId: r.eventId,
+    //       eventTitle: eventInfo.title,
+    //       eventDate: eventInfo.scheduledDate,
+    //       eventTime: eventInfo.scheduledTime,
+    //       eventLocation: eventInfo.scheduledLocation
+    //     }))
+    //   );
 
-      if (successfulEmailsResults.length) {
-        await db
-          .update(schema.attendees)
-          .set({ emailSent: 1 })
-          .where(
-            and(
-              eq(schema.attendees.eventId, eventId),
-              inArray(
-                schema.attendees.email,
-                successfulEmailsResults.map((f) => f.email)
-              )
-            )
-          );
-      }
-    }
+    //   if (successfulEmailsResults.length) {
+    //     await db
+    //       .update(schema.attendees)
+    //       .set({ emailSent: 1 })
+    //       .where(
+    //         and(
+    //           eq(schema.attendees.eventId, eventId),
+    //           inArray(
+    //             schema.attendees.email,
+    //             successfulEmailsResults.map((f) => f.email)
+    //           )
+    //         )
+    //       );
+    //   }
+    // }
 
     return true;
   }),
@@ -258,8 +258,8 @@ export const appRouter = t.router({
         eventId: z.number(),
         attendeeId: z.number(),
         name: z.string().trim(),
-        phoneNumber: z.string().nullable(),
-        email: z.string().trim().email()
+        phoneNumber: z.string().nullable()
+        // email: z.string().trim().email()
       })
     )
     .mutation(async function ({ input }) {
@@ -269,36 +269,37 @@ export const appRouter = t.router({
 
       if (!event) throw new TRPCError({ message: "Event not found", code: "NOT_FOUND" });
 
-      const successfulEmails = await bulkSendInvitations([
-        {
-          attendeeId: input.attendeeId,
-          attendeeName: input.name,
-          attendeeEmail: input.email,
-          attendeePhoneNumber: input.phoneNumber,
+      // const successfulEmails = await bulkSendInvitations([
+      //   {
+      //     attendeeId: input.attendeeId,
+      //     attendeeName: input.name,
+      //     attendeeEmail: input.email,
+      //     attendeePhoneNumber: input.phoneNumber,
 
-          email: input.email,
-          eventId: input.eventId,
-          eventDate: event.scheduledDate,
-          eventLocation: event.scheduledLocation,
-          eventTime: event.scheduledTime,
-          eventTitle: event.title
-        }
-      ]);
+      //     email: input.email,
+      //     eventId: input.eventId,
+      //     eventDate: event.scheduledDate,
+      //     eventLocation: event.scheduledLocation,
+      //     eventTime: event.scheduledTime,
+      //     eventTitle: event.title
+      //   }
+      // ]);
 
-      if (successfulEmails.length) {
-        await db
-          .update(schema.attendees)
-          .set({ emailSent: 1 })
-          .where(
-            and(
-              eq(schema.attendees.id, input.attendeeId),
-              eq(schema.attendees.eventId, input.eventId)
-            )
-          );
-        return true;
-      }
+      // if (successfulEmails.length) {
+      //   await db
+      //     .update(schema.attendees)
+      //     .set({ emailSent: 1 })
+      //     .where(
+      //       and(
+      //         eq(schema.attendees.id, input.attendeeId),
+      //         eq(schema.attendees.eventId, input.eventId)
+      //       )
+      //     );
+      //   return true;
+      // }
 
-      return false;
+      return true;
+      // return false;
     })
 });
 

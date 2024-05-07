@@ -24,7 +24,7 @@
             use:builder.action
             on:click={() => {
               $setAttendeeStatus.mutate({
-                email: attendee.email,
+                name: attendee.name,
                 attendeeId: attendee.id,
                 eventId: attendee.eventId,
                 status: attendee.status === "present" ? "absent" : "present"

@@ -37,14 +37,15 @@
     try {
       const data = JSON.parse(result.data);
 
-      if (!data || data?.eventId !== eventId) {
+      // if (!data || data?.eventId !== eventId) {
+      if (!data) {
         message = "Wrong event! Can't mark as present.";
         status = "error";
         return;
       }
 
       const isAlreadyPresent = $attendees.data?.filter((a) => {
-        return a.email === data.email && a.status === "present";
+        return a.name === data.name && a.status === "present";
       });
 
       if (isAlreadyPresent && isAlreadyPresent.length >= 1) {
@@ -54,10 +55,12 @@
       }
 
       await $updateStatusMutation.mutateAsync({
+        eventId,
+        attendeeId: 0,
         status: "present",
-        email: data.email,
-        eventId: data.eventId,
-        attendeeId: data.attendeeId
+        name: data.name
+        // eventId: data.eventId,
+        // attendeeId: data.attendeeId
       });
 
       trpc.getAttendees.utils.setData({ eventId: data.eventId }, (attendees) => {
@@ -72,7 +75,7 @@
       message = `Updated status for \`${data.name}\` to \`present\``;
       status = "success";
     } catch (err) {
-      message = `Can't update status for <email here>`;
+      message = `Can't update status`;
       status = "error";
     } finally {
       if (status === "error") toast.error(message);

@@ -35,7 +35,7 @@
       scheduledDate: "",
       scheduledTime: "",
       scheduledLocation: "",
-      attendees: [{ name: "", phoneNumber: "", email: "" }]
+      attendees: [{ name: "", phoneNumber: "" }]
     },
     extend: validator({ schema: addEventSchema }),
     onSubmit(data) {
@@ -274,7 +274,7 @@
         </div>
 
         <div class="flex flex-col md:flex-row gap-4">
-          <div>
+          <!-- <div>
             <label
               for="attendees.{idx}.email"
               class="text-sm font-medium md:font-semibold text-muted-foreground inline-flex items-center cursor-pointer">
@@ -296,7 +296,7 @@
                 {$errors.attendees?.[idx]?.email}
               </small>
             {/if}
-          </div>
+          </div> -->
 
           <div>
             <label
@@ -329,7 +329,7 @@
     on:click={() => {
       $data.attendees = [
         ...$data.attendees,
-        { name: "", email: "", phoneNumber: "", key: String($data.attendees.length + 1) }
+        { name: "",  phoneNumber: "", key: String($data.attendees.length + 1) }
       ];
     }}
     type="button"

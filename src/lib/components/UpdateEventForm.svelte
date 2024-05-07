@@ -56,7 +56,7 @@
         scheduledDate: "",
         scheduledTime: "",
         scheduledLocation: "",
-        attendees: [{ id: undefined, name: "", phoneNumber: "", email: "" }]
+        attendees: [{ id: undefined, name: "", phoneNumber: "" }]
       },
       extend: validator({ schema: addEventSchema }),
       onSubmit(data) {
@@ -312,7 +312,7 @@
               placeholder="Enter the name of the attendee" />
 
             <div class="inline-flex items-center ml-auto gap-2.5">
-              {#if event?.attendees[idx]}
+              <!-- {#if event?.attendees[idx]}
                 {@const wasEmailSent = event.attendees[idx].emailSent === 1}
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild let:builder>
@@ -363,7 +363,7 @@
                     {wasEmailSent ? "Email sent successfully!" : "Retry sending email?"}
                   </Tooltip.Content>
                 </Tooltip.Root>
-              {/if}
+              {/if} -->
 
               {#if $data.attendees.length > 1}
                 <Tooltip.Root>
@@ -421,7 +421,7 @@
         </div>
 
         <div class="flex flex-col md:flex-row gap-4">
-          <div>
+          <!-- <div>
             <label
               for="attendees.{idx}.email"
               class="text-sm font-medium md:font-semibold text-muted-foreground inline-flex items-center cursor-pointer">
@@ -443,7 +443,7 @@
                 {$errors.attendees?.[idx]?.email}
               </small>
             {/if}
-          </div>
+          </div> -->
 
           <div>
             <label
@@ -478,7 +478,6 @@
         ...$data.attendees,
         {
           name: "",
-          email: "",
           id: undefined,
           phoneNumber: "",
           key: String($data.attendees.length + 1)

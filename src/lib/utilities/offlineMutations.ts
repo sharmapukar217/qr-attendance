@@ -109,18 +109,18 @@ export const setupOfflineMutations = (queryClient: QueryClient) => {
 
       return { previousAttendees };
     },
-    onSuccess(_d, { eventId, email, status }: RouterInput["setAttendeeStatus"]) {
+    onSuccess(_d, { eventId, name, status }: RouterInput["setAttendeeStatus"]) {
       toast.success(
-        `Status updated to \`${status}\` for attendee \`${email}\` successfully!`,
+        `Status updated to \`${status}\` for attendee \`${name}\` successfully!`,
         {
           id: "setAttendeeStatus"
         }
       );
       trpc.getAttendees.utils.invalidate({ eventId });
     },
-    onError(_err, { eventId, email }: RouterInput["setAttendeeStatus"], ctx) {
+    onError(_err, { eventId, name }: RouterInput["setAttendeeStatus"], ctx) {
       trpc.getAttendees.utils.setData({ eventId }, () => ctx.previousAttendees);
-      toast.error(`Something went wrong while trying to update status for \`${email}\``, {
+      toast.error(`Something went wrong while trying to update status for \`${name}\``, {
         id: "setAttendeeStatus"
       });
     }
