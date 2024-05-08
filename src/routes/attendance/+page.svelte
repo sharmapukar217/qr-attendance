@@ -33,16 +33,18 @@
     const header = ["Name", "Phone Number", "Office", "Role", "Status"].join(",") + "\n";
     csvContent += header;
 
-    $attendees.data?.forEach((attendee) => {
-      const values = [
-        attendee.name,
-        attendee.phoneNumber,
-        attendee.office,
-        attendee.role,
-        attendee.status
-      ].join(",");
-      csvContent += values + "\n";
-    });
+    $attendees.data
+      ?.filter((a) => a.role === "participant")
+      .forEach((attendee) => {
+        const values = [
+          attendee.name,
+          attendee.phoneNumber,
+          attendee.office,
+          attendee.role,
+          attendee.status
+        ].join(",");
+        csvContent += values + "\n";
+      });
 
     const blob = new Blob([csvContent], { type: "text/csv" });
 
@@ -65,21 +67,22 @@
 
     const zip = new Zip();
     for (const attendee of attendees) {
-      console.debug("attendee:", attendee);
+      if (attendee.role === "participant") {
+        const qr = await QR.toDataURL(
+          JSON.stringify({
+            name: attendee.name,
+            attendeeId: attendee.id,
+            eventId: attendee.eventId,
+            attendeeName: attendee.name,
+            phoneNumber: attendee.phoneNumber
+          })
+        );
 
-      const qr = await QR.toDataURL(
-        JSON.stringify({
-          name: attendee.name,
-          attendeeId: attendee.id,
-          eventId: attendee.eventId,
-          phoneNumber: attendee.phoneNumber
-        })
-      );
-
-      const idx = qr.indexOf("base64,") + "base64,".length;
-      zip.file(`${attendee.name}_${attendee.eventId}.png`, qr.substring(idx), {
-        base64: true
-      });
+        const idx = qr.indexOf("base64,") + "base64,".length;
+        zip.file(`${attendee.name}_${attendee.eventId}.png`, qr.substring(idx), {
+          base64: true
+        });
+      }
     }
 
     const zipData = await zip.generateAsync({
