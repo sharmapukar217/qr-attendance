@@ -7,7 +7,7 @@ export const trpc = createTRPCSvelte<AppRouter>({
   links: [httpBatchLink({ url: "/api/trpc" })],
   queryClientConfig: {
     defaultOptions: {
-      queries: { refetchOnWindowFocus: false },
+      // queries: { refetchOnWindowFocus: false },
       mutations: { networkMode: "offlineFirst" }
     }
   }
