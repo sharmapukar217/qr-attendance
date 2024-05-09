@@ -17,6 +17,9 @@
   let status = "scanning";
   let message = "Scanning...";
 
+  const errorSound = new Audio("/error.mp3");
+  const successSound = new Audio("/success.mp3");
+
   const attendees = trpc.getAttendees.query({ eventId }, { enabled: !!eventId });
 
   const updateStatusMutation = createMutation<
@@ -27,18 +30,18 @@
 
   const swapCamera = () => {};
 
-  const delay = async (time = 500) => {
+  const delay = (time = 1500) => {
     return new Promise((resolve) => setTimeout(resolve, time));
   };
 
   const handleQRScan = async (result: QrScanner.ScanResult) => {
     status = "scanning";
-
     try {
       const data = JSON.parse(result.data);
 
       // if (!data || data?.eventId !== eventId) {
       if (!data) {
+        await errorSound.play();
         message = "Wrong event! Can't mark as present.";
         status = "error";
         return;
@@ -49,19 +52,21 @@
       });
 
       if (isAlreadyPresent && isAlreadyPresent.length >= 1) {
+        await errorSound.play();
+
         message = `Already marked as \`present\` for \`${data.name}\``;
-        status = "success";
+        status = "error";
         return;
       }
 
       await $updateStatusMutation.mutateAsync({
         eventId,
-        attendeeId: 0,
+        name: data.name,
         status: "present",
-        name: data.name
-        // eventId: data.eventId,
-        // attendeeId: data.attendeeId
+        attendeeId: data.attendeeId
       });
+
+      await successSound.play();
 
       trpc.getAttendees.utils.setData({ eventId: data.eventId }, (attendees) => {
         if (!attendees) return;
@@ -75,6 +80,8 @@
       message = `Updated status for \`${data.name}\` to \`present\``;
       status = "success";
     } catch (err) {
+      await errorSound.play();
+
       message = `Can't update status`;
       status = "error";
     } finally {
@@ -82,6 +89,9 @@
       else toast.success(message);
 
       await delay();
+      errorSound.remove();
+      successSound.remove();
+
       status = "scanning";
       message = "scanning";
     }
@@ -104,7 +114,12 @@
 
 <Dialog.Root
   onOpenChange={function (open) {
-    if (qrScanner && !open) qrScanner.stop();
+    if (open) {
+      errorSound.pause();
+      successSound.pause();
+    } else {
+      if (qrScanner && !open) qrScanner.stop();
+    }
   }}>
   <Dialog.Trigger
     title="Start Scanner"
